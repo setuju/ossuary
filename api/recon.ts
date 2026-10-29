@@ -67,6 +67,7 @@ export interface ReconFootprint {
     hasSnapshot: boolean;
     closestTimestamp?: string;
     earliestTimestamp?: string;
+    lastAliveTimestamp?: string;
     snapshotUrl?: string;
     status?: number;
     error?: string | null;
@@ -112,6 +113,53 @@ async function probeHost(host: string, port = 80, timeoutMs = 3500): Promise<{ a
       }
     });
   });
+}
+
+async function fetchLastAliveSnapshot(domain: string, timeoutMs = 5000): Promise<string | undefined> {
+  try {
+    const searchRes = await fetch(
+      `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(domain)}&format=json&srlimit=1`,
+      { signal: AbortSignal.timeout(timeoutMs), headers: { 'User-Agent': 'OssuaryRecon/1.0' } }
+    );
+    if (!searchRes.ok) return undefined;
+    const searchData = await searchRes.json();
+    const hit = searchData?.query?.search?.[0];
+    if (!hit) return undefined;
+
+    const summaryRes = await fetch(
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(hit.title.replace(/ /g, '_'))}`,
+      { signal: AbortSignal.timeout(timeoutMs), headers: { 'User-Agent': 'OssuaryRecon/1.0' } }
+    );
+    if (!summaryRes.ok) return undefined;
+    const summary = await summaryRes.json();
+    const extract = summary?.extract || '';
+
+    const patterns = [
+      /(?:closed|shut down|ceased|discontinued|went offline|terminated|ended|defunct)[\s\S]{0,60}?\b(19\d\d|20\d\d)\b/i,
+      /\b(19\d\d|20\d\d)\b[\s\S]{0,60}?(?:closed|shut down|ceased|discontinued)/i,
+    ];
+    let deathYear: number | undefined;
+    for (const pat of patterns) {
+      const m = extract.match(pat);
+      if (m) { deathYear = parseInt(m[1], 10); break; }
+    }
+    if (!deathYear) {
+      const eraMatch = extract.match(/\b(19\d\d|20\d\d)\s*[\u2013-]\s*(19\d\d|20\d\d)\b/);
+      if (eraMatch) deathYear = parseInt(eraMatch[2], 10);
+    }
+    if (!deathYear) return undefined;
+
+    const cdxRes = await fetch(
+      `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(domain)}&output=json&to=${deathYear}1231&filter=statuscode:200&limit=-1`,
+      { signal: AbortSignal.timeout(timeoutMs), headers: { 'User-Agent': 'OssuaryRecon/1.0' } }
+    );
+    if (!cdxRes.ok) return undefined;
+    const cdxData = await cdxRes.json();
+    if (Array.isArray(cdxData) && cdxData.length > 1 && Array.isArray(cdxData[1]) && cdxData[1][1]) {
+      return String(cdxData[1][1]);
+    }
+  } catch {}
+  return undefined;
 }
 
 async function fetchWaybackEarliest(domain: string, timeoutMs = 4000): Promise<string | undefined> {
@@ -300,6 +348,8 @@ export default async function handler(req: IncomingMessage & { body?: any }, res
 
   try {
     let addresses: string[] = [];
+    let lastAliveSnapshot: string | undefined = undefined;
+    try { lastAliveSnapshot = await fetchLastAliveSnapshot(rawDomain, 5000); } catch {}
     let dnsError: string | null = null;
     try {
       addresses = await dns.resolve4(rawDomain);
@@ -356,6 +406,14 @@ export default async function handler(req: IncomingMessage & { body?: any }, res
       memory,
       timestamp: new Date().toISOString(),
     };
+
+    if (lastAliveSnapshot) {
+      footprint.wayback.lastAliveTimestamp = lastAliveSnapshot;
+      footprint.wayback.closestTimestamp = lastAliveSnapshot;
+      footprint.wayback.snapshotUrl = `https://web.archive.org/web/${lastAliveSnapshot}/http://${rawDomain}/`;
+      footprint.wayback.hasSnapshot = true;
+    }
+
 
     if (Sentry) {
       await Sentry.flush(1000).catch(() => {});

@@ -1111,6 +1111,7 @@ function GhostScreen({
       <ResetButton onReset={onReset} />
 
       <GhostFooter />
+      <TechStackFooter />
     </main>
   );
 }
@@ -1153,6 +1154,42 @@ function GhostFooter() {
       <a href="https://github.com/setuju" target="_blank" rel="noreferrer" className="footer-link">
         github
       </a>
+    </footer>
+  );
+}
+
+function TechStackFooter() {
+  const techs = [
+    { name: 'React', logo: 'react', url: 'https://react.dev' },
+    { name: 'TypeScript', logo: 'typescript', url: 'https://www.typescriptlang.org' },
+    { name: 'Node.js', logo: 'nodedotjs', url: 'https://nodejs.org' },
+    { name: 'Vite', logo: 'vite', url: 'https://vitejs.dev' },
+    { name: 'Vercel', logo: 'vercel', url: 'https://vercel.com' },
+    { name: 'Sentry', logo: 'sentry', url: 'https://sentry.io' },
+    { name: 'Tailwind', logo: 'tailwindcss', url: 'https://tailwindcss.com' },
+    { name: 'Gemma', logo: 'google', url: 'https://ai.google.dev/gemma', fallback: 'Gemma' },
+    { name: 'Ollama', logo: 'ollama', url: 'https://ollama.com', fallback: 'Ollama' },
+    { name: 'ElevenLabs', logo: 'elevenlabs', url: 'https://elevenlabs.io', fallback: 'ElevenLabs' },
+    { name: 'SerpApi', logo: 'serpapi', url: 'https://serpapi.com', fallback: 'SerpApi' },
+    { name: 'Mastra', logo: 'mastra', url: 'https://mastra.ai', fallback: 'Mastra' },
+    { name: 'Backboard', logo: 'backboard', url: 'https://backboard.io', fallback: 'Backboard' },
+    { name: 'Wikipedia', logo: 'wikipedia', url: 'https://wikipedia.org' },
+    { name: 'Internet Archive', logo: 'internetarchive', url: 'https://archive.org', fallback: 'Archive' },
+  ];
+  return (
+    <footer className="tech-stack-footer">
+      <span className="tech-stack-label">built with</span>
+      <div className="tech-stack-grid">
+        {techs.map(t => (
+          <a key={t.name} href={t.url} target="_blank" rel="noreferrer" className="tech-badge" title={t.name}>
+            {t.fallback ? (
+              <span className="tech-text">{t.fallback}</span>
+            ) : (
+              <img src={`https://cdn.simpleicons.org/${t.logo}/c9a25c`} alt={t.name} className="tech-icon" loading="lazy" />
+            )}
+          </a>
+        ))}
+      </div>
     </footer>
   );
 }
