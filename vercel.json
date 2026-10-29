@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/recon.ts": {
+      "maxDuration": 30
+    },
+    "api/conjure.ts": {
+      "maxDuration": 60
+    },
+    "api/echoes.ts": {
+      "maxDuration": 15
+    }
+  }
+}
