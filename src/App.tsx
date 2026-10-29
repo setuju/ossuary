@@ -171,10 +171,12 @@ function useWikiFragment(domain: string, enabled: boolean) {
     const cleanDomain = domain.replace(/^www\./, '');
     const prefix = cleanDomain.split('.')[0] || cleanDomain;
 
-    const UA = 'OssuaryGhostApp/1.0 (https://ossuary.saturumah.net; contact via github.com/setuju)';
     const base = 'https://en.wikipedia.org/w/api.php';
     const fetchJson = async (url: string) => {
-      const res = await fetch(url, { headers: { 'User-Agent': UA } });
+      // User-Agent is a forbidden header in browser fetch — setting it triggers
+      // a CORS preflight that Wikipedia's API doesn't whitelist for our origin.
+      // The `origin=*` query param handles CORS for simple GET requests.
+      const res = await fetch(url);
       if (!res.ok) return null;
       return res.json();
     };
