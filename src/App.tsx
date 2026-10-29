@@ -863,7 +863,7 @@ function GhostScreen({
             <>
               <span>{bornYear}</span>
               <span className="dash">—</span>
-              <span>{lastSeen}</span>
+              <span>{lastArchived}</span>
             </>
           ) : (
             <span className="unknown">dates unknown</span>
@@ -872,7 +872,7 @@ function GhostScreen({
         <div className="ghost-state">{result.profile.emotional_state.toLowerCase()}</div>
       </header>
 
-      <TimelineOfDecay bornYear={firstSeen} lastSeen={lastSeen} />
+      <TimelineOfDecay bornYear={firstSeen} lastSeen={lastArchived} />
 
       {hasVisage ? (
         <section className="visage">
