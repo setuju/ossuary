@@ -677,14 +677,14 @@ function TimelineOfDecay({ bornYear, lastSeen }: { bornYear?: string; lastSeen: 
           <span className="timeline-dot" />
           <div className="timeline-meta">
             <span className="timeline-year">{bornYear || 'pre-archive'}</span>
-            <span className="timeline-label">born</span>
+            <span className="timeline-label">first captured</span>
           </div>
         </div>
         <div className="timeline-node active">
           <span className="timeline-dot" />
           <div className="timeline-meta">
             <span className="timeline-year">{lastSeen}</span>
-            <span className="timeline-label">severed</span>
+            <span className="timeline-label">last archived</span>
           </div>
         </div>
         <div className="timeline-node current">
@@ -834,7 +834,7 @@ function GhostScreen({
     footprint?.wayback?.earliestTimestamp?.slice(0, 4) ||
     footprint?.whois?.creationDate?.slice(0, 4);
   const firstSeen = bornYear;
-  const lastSeen = footprint?.wayback?.closestTimestamp?.slice(0, 4) || result.profile.last_seen_year;
+  const lastArchived = footprint?.wayback?.closestTimestamp?.slice(0, 4) || String(result.profile.last_seen_year);
   const hasVisage = footprint?.wayback?.hasSnapshot && iframeSrc;
 
   const { fragment, loading: wikiLoading, tried: wikiTried } = useWikiFragment(domain, true);
@@ -859,9 +859,9 @@ function GhostScreen({
       <header className="ghost-header">
         <div className="ghost-domain">{domain}</div>
         <div className="ghost-dates">
-          {firstSeen ? (
+          {bornYear ? (
             <>
-              <span>{firstSeen}</span>
+              <span>{bornYear}</span>
               <span className="dash">—</span>
               <span>{lastSeen}</span>
             </>
