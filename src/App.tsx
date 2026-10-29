@@ -171,34 +171,56 @@ function useWikiFragment(domain: string, enabled: boolean) {
     const cleanDomain = domain.replace(/^www\./, '');
     const prefix = cleanDomain.split('.')[0] || cleanDomain;
 
+    const UA = 'OssuaryGhostApp/1.0 (https://ossuary.saturumah.net; contact via github.com/setuju)';
+    const base = 'https://en.wikipedia.org/w/api.php';
+    const fetchJson = async (url: string) => {
+      const res = await fetch(url, { headers: { 'User-Agent': UA } });
+      if (!res.ok) return null;
+      return res.json();
+    };
+
     (async () => {
       try {
-        const candidates = [cleanDomain, `${prefix} website`, prefix];
         let hitTitle: string | null = null;
 
-        for (const candidate of candidates) {
-          try {
-            const searchRes = await fetch(
-              `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(
-                candidate
-              )}&format=json&origin=*&srlimit=3`
+        // TIER 1: Exact title lookup (handles Pets.com, GeoCities, Friendster, etc.)
+        const exactCandidates = [
+          `${prefix.charAt(0).toUpperCase()}${prefix.slice(1)}.com`,
+          `${prefix.charAt(0).toUpperCase()}${prefix.slice(1)}`,
+          cleanDomain,
+          `${prefix.charAt(0).toUpperCase()}${prefix.slice(1)} (website)`,
+          `${prefix.charAt(0).toUpperCase()}${prefix.slice(1)} (service)`,
+        ];
+        for (const title of exactCandidates) {
+          const data = await fetchJson(
+            `${base}?action=query&titles=${encodeURIComponent(title)}&format=json&origin=*`
+          );
+          const pages = data?.query?.pages || {};
+          const pageObj: any = Object.values(pages)[0];
+          if (pageObj && !pageObj.missing && pageObj.pageid) {
+            hitTitle = pageObj.title;
+            break;
+          }
+        }
+
+        // TIER 2: Search fallback
+        if (!hitTitle) {
+          const searchCandidates = [cleanDomain, `${prefix} website`, prefix];
+          for (const candidate of searchCandidates) {
+            const data = await fetchJson(
+              `${base}?action=query&list=search&srsearch=${encodeURIComponent(candidate)}&format=json&origin=*&srlimit=10`
             );
-            if (!searchRes.ok) continue;
-            const searchData = await searchRes.json();
-            const hits = searchData?.query?.search || [];
+            const hits = data?.query?.search || [];
             if (hits.length > 0) {
-              const best =
-                hits.find(
-                  (h: any) =>
-                    h.title.toLowerCase() === prefix.toLowerCase() ||
-                    h.title.toLowerCase() === cleanDomain.toLowerCase() ||
-                    h.title.toLowerCase().includes(prefix.toLowerCase())
-                ) || hits[0];
+              const best = hits.find(
+                (h: any) =>
+                  h.title.toLowerCase() === prefix.toLowerCase() ||
+                  h.title.toLowerCase() === cleanDomain.toLowerCase() ||
+                  h.title.toLowerCase().includes(prefix.toLowerCase())
+              ) || hits[0];
               hitTitle = best.title;
               break;
             }
-          } catch {
-            // continue search
           }
         }
 
@@ -208,56 +230,39 @@ function useWikiFragment(domain: string, enabled: boolean) {
           return;
         }
 
-        const safeTitle = hitTitle.replace(/ /g, '_');
+        // TIER 3: Fetch full extract via Action API (not REST)
+        const extractData = await fetchJson(
+          `${base}?action=query&prop=extracts|pageimages&explaintext=1&exintro=1&titles=${encodeURIComponent(
+            hitTitle
+          )}&pithumbsize=600&format=json&origin=*`
+        );
+        const pages = extractData?.query?.pages || {};
+        const pageObj: any = Object.values(pages)[0];
+        if (!pageObj || pageObj.missing) {
+          setTried(true);
+          setLoading(false);
+          return;
+        }
 
-        let summary: any = null;
-        try {
-          const summaryRes = await fetch(
-            `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(safeTitle)}`
-          );
-          if (summaryRes.ok) {
-            summary = await summaryRes.json();
-          }
-        } catch {}
-
-        let fullExtract = summary?.extract || '';
-        try {
-          const actionRes = await fetch(
-            `https://en.wikipedia.org/w/api.php?action=query&prop=extracts|pageimages&explaintext=1&exintro=1&titles=${encodeURIComponent(
-              hitTitle
-            )}&pithumbsize=600&format=json&origin=*`
-          );
-          if (actionRes.ok) {
-            const actionData = await actionRes.json();
-            const pages = actionData?.query?.pages || {};
-            const pageObj: any = Object.values(pages)[0];
-            if (pageObj?.extract && pageObj.extract.length > fullExtract.length) {
-              fullExtract = pageObj.extract;
-            }
-            if (!summary?.thumbnail?.source && pageObj?.thumbnail?.source) {
-              if (!summary) summary = {};
-              summary.thumbnail = { source: pageObj.thumbnail.source };
-            }
-          }
-        } catch {}
-
-        const rawText = fullExtract || summary?.extract || '';
+        const rawText = pageObj.extract || '';
         const parsedParagraphs = parseWikiExtract(rawText);
         const derivedEra = extractWikiEra(rawText);
 
-        if (parsedParagraphs.length === 0 && !rawText) {
+        if (!rawText || parsedParagraphs.length === 0) {
           setTried(true);
           setLoading(false);
           return;
         }
 
         setFragment({
-          title: summary?.title || hitTitle,
-          description: summary?.description || 'Defunct Internet Service & Historical Archive',
+          title: pageObj.title || hitTitle,
+          description: 'Defunct Internet Service & Historical Archive',
           extract: rawText,
-          paragraphs: parsedParagraphs.length > 0 ? parsedParagraphs : [rawText],
-          url: summary?.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${safeTitle}`,
-          thumbnail: summary?.thumbnail?.source,
+          paragraphs: parsedParagraphs,
+          url: `https://en.wikipedia.org/wiki/${encodeURIComponent(
+            (pageObj.title || hitTitle).replace(/ /g, '_')
+          )}`,
+          thumbnail: pageObj.thumbnail?.source,
           era: derivedEra,
         });
       } catch {
