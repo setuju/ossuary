@@ -72,6 +72,15 @@ const PRESET_RELICS = [
   { domain: 'friendster.com', era: '2002–2015', epitaph: 'the first social ghost' },
   { domain: 'vine.co', era: '2012–2017', epitaph: 'six seconds, looping forever' },
   { domain: 'pets.com', era: '1998–2000', epitaph: 'the sock puppet martyr' },
+
+    { domain: 'myspace.com', label: 'myspace', era: '2003–now' },
+    { domain: 'clubpenguin.com', label: 'club penguin', era: '2005–2017' },
+    { domain: 'megaupload.com', label: 'megaupload', era: '2005–2012' },
+    { domain: 'grooveshark.com', label: 'grooveshark', era: '2006–2015' },
+    { domain: 'sixdegrees.com', label: 'sixdegrees', era: '1997–2001' },
+    { domain: 'boo.com', label: 'boo.com', era: '1998–2000' },
+    { domain: 'angelfire.com', label: 'angelfire', era: '1996–now' },
+    { domain: 'thepiratebay.org', label: 'pirate bay', era: '2003–now' },
 ];
 
 // ─── Ambient hum (Web Audio, no asset) ─────────────────────────────
@@ -765,7 +774,21 @@ function GhostScreen({
   const lastArchived = footprint?.wayback?.closestTimestamp?.slice(0, 4) || String(result.profile.last_seen_year);
   const hasVisage = footprint?.wayback?.hasSnapshot && iframeSrc;
 
-  const { fragment, loading: wikiLoading, tried: wikiTried } = useWikiFragment(domain, true);
+  
+  const [whoisData, setWhoisData] = useState<any>(null);
+  useEffect(() => {
+    if (!domain) { setWhoisData(null); return; }
+    let active = true;
+    const clean = domain.replace(/^www\./, '').trim();
+    if (!clean) return;
+    fetch(`/api/whois?domain=${encodeURIComponent(clean)}`)
+      .then(r => r.json())
+      .then(d => { if (active && d && d.ok) setWhoisData(d); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [domain]);
+
+const { fragment, loading: wikiLoading, tried: wikiTried } = useWikiFragment(domain, true);
   const { echoes } = useEchoes(domain, true);
 
   const scrollToRecord = () => {
@@ -1010,6 +1033,14 @@ function GhostScreen({
                 {footprint?.wayback?.hasSnapshot ? footprint.wayback.closestTimestamp?.slice(0, 4) : 'no tombstone'}
               </span>
             </div>
+            {whoisData && (
+              <div className="whois-panel">
+                <div className="whois-row"><span className="whois-label">registrar</span><span className="whois-value">{whoisData.registrar || '—'}</span></div>
+                <div className="whois-row"><span className="whois-label">created</span><span className="whois-value">{whoisData.create_date ? whoisData.create_date.slice(0,10) : '—'}</span></div>
+                <div className="whois-row"><span className="whois-label">expires</span><span className="whois-value">{whoisData.expire_date ? whoisData.expire_date.slice(0,10) : '—'}</span></div>
+              </div>
+            )}
+
             <div className="ledger-row">
               <span className="ledger-k">model</span>
               <span className="ledger-v">{result.models?.narrative || 'unknown'}</span>

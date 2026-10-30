@@ -1,4 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+const fetchWithTimeout = (url: string, opts: any = {}, ms = 4000) =>
+  fetch(url, { ...opts, signal: AbortSignal.timeout(ms) });
+
 import * as dns from 'node:dns/promises';
 import * as net from 'node:net';
 import {
@@ -202,8 +205,7 @@ async function fetchLastAliveSnapshot(domain: string, timeoutMs = 5000): Promise
     }
     if (!deathYear) return undefined;
 
-    const cdxRes = await fetch(
-      'https://web.archive.org/cdx/search/cdx?url=' + encodeURIComponent(domain) + '&output=json&to=' + deathYear + '1231&filter=statuscode:200&limit=-1',
+    const cdxRes = await fetchWithTimeout('https://web.archive.org/cdx/search/cdx?url=' + encodeURIComponent(domain) + '&output=json&to=' + deathYear + '1231&filter=statuscode:200&limit=-1',
       { signal: AbortSignal.timeout(timeoutMs), headers }
     );
     if (!cdxRes.ok) return undefined;
@@ -217,8 +219,7 @@ async function fetchLastAliveSnapshot(domain: string, timeoutMs = 5000): Promise
 
 async function fetchWaybackEarliest(domain: string, timeoutMs = 4000): Promise<string | undefined> {
   try {
-    const res = await fetch(
-      `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(domain)}&output=json&limit=1&filter=statuscode:200`,
+    const res = await fetchWithTimeout(`https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(domain)}&output=json&limit=1&filter=statuscode:200`,
       {
         signal: AbortSignal.timeout(timeoutMs),
         headers: { 'User-Agent': 'OssuaryGhostRecon/1.0' },
@@ -237,7 +238,7 @@ async function fetchWaybackEarliest(domain: string, timeoutMs = 4000): Promise<s
 
 async function fetchWayback(domain: string, timeoutMs = 4500) {
   try {
-    const res = await fetch(`https://archive.org/wayback/available?url=${encodeURIComponent(domain)}`, {
+    const res = await fetchWithTimeout(`https://archive.org/wayback/available?url=${encodeURIComponent(domain)}`, {
       signal: AbortSignal.timeout(timeoutMs),
       headers: {
         'User-Agent': 'OssuaryGhostRecon/1.0 (+https://ossuary.dev)',
@@ -295,7 +296,7 @@ async function fetchWayback(domain: string, timeoutMs = 4500) {
 
 async function fetchWhoisRdap(domain: string, timeoutMs = 4500) {
   try {
-    const res = await fetch(`https://rdap.org/domain/${encodeURIComponent(domain)}`, {
+    const res = await fetchWithTimeout(`https://rdap.org/domain/${encodeURIComponent(domain)}`, {
       signal: AbortSignal.timeout(timeoutMs),
       headers: { Accept: 'application/rdap+json' },
     });
@@ -353,7 +354,7 @@ async function fetchBackboardMemory(domain: string): Promise<{ remembered: boole
   const apiKey = process.env.BACKBOARD_API_KEY;
   if (!apiKey) return { remembered: false };
   try {
-    const res = await fetch(`https://app.backboard.io/api/threads?domain=${encodeURIComponent(domain)}`, {
+    const res = await fetchWithTimeout(`https://app.backboard.io/api/threads?domain=${encodeURIComponent(domain)}`, {
       headers: { 'X-API-Key': apiKey },
       signal: AbortSignal.timeout(1500),
     });
