@@ -316,6 +316,15 @@ const footprint: any = {
       footprint.wayback.snapshotUrl = `https://web.archive.org/web/${lastAlive}/http://${rawDomain}/`;
     }
 
+    // ── FAILSAFE UI OVERRIDE: hardcoded death year untuk domain mati ──
+    if (hardcodedDeathYear && !lastAlive) {
+      const ts = `${hardcodedDeathYear}1231000000`;
+      footprint.wayback.hasSnapshot = true;
+      footprint.wayback.lastAliveTimestamp = ts;
+      footprint.wayback.closestTimestamp = ts;
+      footprint.wayback.snapshotUrl = `https://web.archive.org/web/${ts}/http://${rawDomain}/`;
+    }
+
     return res.status(200).json(footprint);
   } catch (err: any) {
     // ── GLOBAL CATCH: Always return a response ──
