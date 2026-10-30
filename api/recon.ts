@@ -191,6 +191,8 @@ async function fetchLastAliveSnapshot(domain: string, timeoutMs = 4000): Promise
     if (!extract) return undefined;
 
     const patterns = [
+      /(?:shut down|closed|discontinued).*?(19\d{2}|20\d{2})/i,
+
       /(?:closed|shut down|ceased|discontinued|went offline|terminated|ended|defunct)[\s\S]{0,60}?\b(19\d\d|20\d\d)\b/i,
       /\b(19\d\d|20\d\d)\b[\s\S]{0,60}?(?:closed|shut down|ceased|discontinued)/i,
     ];
@@ -227,6 +229,8 @@ function determineLifeStatus(
 ): { status: 'alive' | 'deceased'; reason: string } {
   // Wikipedia confirmed death → DECEASED
   if (lastAliveTimestamp) {
+    // Wikipedia explicitly confirms the service is dead.
+    // This takes absolute priority — do NOT fall through to snapshot check.
     return { status: 'deceased', reason: 'Wikipedia confirms the service shut down.' };
   }
   // No Wayback snapshot → DECEASED
