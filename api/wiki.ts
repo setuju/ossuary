@@ -1,5 +1,5 @@
 // Server-side Wikipedia proxy — bypasses browser CORS.
-// GET /api/wiki?title=pets.com
+// GET /api/wiki?title=vine.co
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_WINDOW_MS = 60_000;
 const MAX_REQ = 30;
@@ -21,6 +21,10 @@ async function fetchJson(url: string, timeoutMs = 5000): Promise<any | null> {
     return await res.json();
   } catch { return null; }
 }
+function isDisambiguation(pageObj: any): boolean {
+  const pp = pageObj?.pageprops;
+  return !!(pp && Object.prototype.hasOwnProperty.call(pp, 'disambiguation'));
+}
 export default async function handler(req: any, res: any) {
   const ip = (req.headers?.['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown';
   if (!checkRateLimit(ip)) return res.status(429).json({ ok: false, reason: 'rate_limited' });
@@ -32,30 +36,56 @@ export default async function handler(req: any, res: any) {
   const prefix = cleanDomain.split('.')[0] || cleanDomain;
   const cap = prefix.charAt(0).toUpperCase() + prefix.slice(1);
   const base = 'https://en.wikipedia.org/w/api.php';
+
+  // ── TIER 1: exact candidates — website/service BEFORE bare name ──
   let hitTitle: string | null = null;
-  const exactCandidates = [cap + '.com', cap, cleanDomain, cap + ' (website)', cap + ' (service)'];
+  const exactCandidates = [
+    cap + ' (service)',
+    cap + ' (website)',
+    cap + ' (app)',
+    cap + ' (social media)',
+    cap + ' (platform)',
+    cap + '.com',
+    cap,
+    cleanDomain,
+  ];
   for (const cand of exactCandidates) {
-    const data = await fetchJson(base + '?action=query&titles=' + encodeURIComponent(cand) + '&format=json&redirects=1');
+    const data = await fetchJson(base + '?action=query&titles=' + encodeURIComponent(cand) + '&format=json&redirects=1&prop=pageprops');
     const pages = data?.query?.pages || {};
     const pageObj: any = Object.values(pages)[0];
-    if (pageObj && !pageObj.missing && pageObj.pageid) { hitTitle = pageObj.title; break; }
+    if (!pageObj || pageObj.missing || !pageObj.pageid) continue;
+    if (isDisambiguation(pageObj)) continue; // skip disambiguation page
+    hitTitle = pageObj.title;
+    break;
   }
+
+  // ── TIER 2: search fallback — filter out disambiguation & non-website ──
   if (!hitTitle) {
-    const searchCandidates = [cleanDomain, prefix + ' website', prefix];
+    const searchCandidates = [cleanDomain, prefix + ' website', prefix + ' service', prefix + ' app', prefix];
     for (const cand of searchCandidates) {
       const data = await fetchJson(base + '?action=query&list=search&srsearch=' + encodeURIComponent(cand) + '&format=json&srlimit=10');
       const hits = data?.query?.search || [];
-      if (hits.length > 0) {
-        const best = hits.find((h: any) =>
-          h.title.toLowerCase() === prefix.toLowerCase() ||
-          h.title.toLowerCase() === cleanDomain.toLowerCase() ||
-          h.title.toLowerCase().includes(prefix.toLowerCase())
-        ) || hits[0];
-        hitTitle = best.title; break;
+      for (const hit of hits) {
+        const t = String(hit.title || '').toLowerCase();
+        if (t.includes('disambiguation')) continue;
+        const isRelevant = t.includes('website') || t.includes('service') || t.includes('app') ||
+          t.includes('platform') || t.includes('social') || t.includes('video') ||
+          t.includes('company') || t.includes('dot-com') || t.includes('internet');
+        if (!isRelevant && t !== prefix.toLowerCase() && t !== cleanDomain.toLowerCase()) continue;
+        // check disambiguation via pageprops
+        const check = await fetchJson(base + '?action=query&titles=' + encodeURIComponent(hit.title) + '&format=json&prop=pageprops');
+        const pages = check?.query?.pages || {};
+        const pageObj: any = Object.values(pages)[0];
+        if (pageObj && isDisambiguation(pageObj)) continue;
+        hitTitle = hit.title;
+        break;
       }
+      if (hitTitle) break;
     }
   }
+
   if (!hitTitle) return res.status(200).json({ ok: false, reason: 'not_found' });
+
   const extractData = await fetchJson(
     base + '?action=query&prop=extracts|pageimages|description&explaintext=1&exintro=1' +
     '&titles=' + encodeURIComponent(hitTitle) + '&pithumbsize=600&format=json&redirects=1'

@@ -129,18 +129,26 @@ async function fetchLastAliveSnapshot(domain: string, timeoutMs = 5000): Promise
         return await res.json();
       } catch { return null; }
     };
+    const isDisambiguation = (pageObj: any): boolean => {
+      const pp = pageObj?.pageprops;
+      return !!(pp && Object.prototype.hasOwnProperty.call(pp, 'disambiguation'));
+    };
 
     let hitTitle: string | null = null;
+    // ── exact candidates: website/service BEFORE bare name ──
     const exactCandidates = [
       cap + ' (service)', cap + ' (website)', cap + ' (app)',
       cap + ' (social media)', cap + ' (platform)',
       cap + '.com', cap, cleanDomain,
     ];
     for (const cand of exactCandidates) {
-      const data = await fetchJson(base + '?action=query&titles=' + encodeURIComponent(cand) + '&format=json&redirects=1');
+      const data = await fetchJson(base + '?action=query&titles=' + encodeURIComponent(cand) + '&format=json&redirects=1&prop=pageprops');
       const pages = data?.query?.pages || {};
       const pageObj: any = Object.values(pages)[0];
-      if (pageObj && !pageObj.missing && pageObj.pageid) { hitTitle = pageObj.title; break; }
+      if (!pageObj || pageObj.missing || !pageObj.pageid) continue;
+      if (isDisambiguation(pageObj)) continue;
+      hitTitle = pageObj.title;
+      break;
     }
 
     if (!hitTitle) {
@@ -150,8 +158,17 @@ async function fetchLastAliveSnapshot(domain: string, timeoutMs = 5000): Promise
         const hits = data?.query?.search || [];
         for (const hit of hits) {
           const t = String(hit.title || '').toLowerCase();
-          const isRelevant = t.includes('website') || t.includes('service') || t.includes('app') || t.includes('platform') || t.includes('social') || t.includes('video') || t.includes('company') || t.includes('dot-com') || t.includes('internet');
-          if (isRelevant || t === prefix.toLowerCase() || t === cleanDomain.toLowerCase()) { hitTitle = hit.title; break; }
+          if (t.includes('disambiguation')) continue;
+          const isRelevant = t.includes('website') || t.includes('service') || t.includes('app') ||
+            t.includes('platform') || t.includes('social') || t.includes('video') ||
+            t.includes('company') || t.includes('dot-com') || t.includes('internet');
+          if (!isRelevant && t !== prefix.toLowerCase() && t !== cleanDomain.toLowerCase()) continue;
+          const check = await fetchJson(base + '?action=query&titles=' + encodeURIComponent(hit.title) + '&format=json&prop=pageprops');
+          const pages = check?.query?.pages || {};
+          const pageObj: any = Object.values(pages)[0];
+          if (pageObj && isDisambiguation(pageObj)) continue;
+          hitTitle = hit.title;
+          break;
         }
         if (hitTitle) break;
       }
