@@ -765,7 +765,22 @@ function GhostScreen({
   const lastArchived = footprint?.wayback?.closestTimestamp?.slice(0, 4) || String(result.profile.last_seen_year);
   const hasVisage = footprint?.wayback?.hasSnapshot && iframeSrc;
 
-  const { fragment, loading: wikiLoading, tried: wikiTried } = useWikiFragment(domain, true);
+  
+  const [whoisData, setWhoisData] = useState<any>(null);
+  useEffect(() => {
+    if (!domain) { setWhoisData(null); return; }
+    let active = true;
+    const cleanDomain = domain.replace(/^www\./, '').trim();
+    if (!cleanDomain) return;
+    
+    fetch(`/api/whois?domain=${encodeURIComponent(cleanDomain)}`)
+      .then(r => r.json())
+      .then(d => { if (active && d && d.ok) setWhoisData(d); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [domain]);
+
+const { fragment, loading: wikiLoading, tried: wikiTried } = useWikiFragment(domain, true);
   const { echoes } = useEchoes(domain, true);
 
   const scrollToRecord = () => {
@@ -1010,6 +1025,14 @@ function GhostScreen({
                 {footprint?.wayback?.hasSnapshot ? footprint.wayback.closestTimestamp?.slice(0, 4) : 'no tombstone'}
               </span>
             </div>
+            {whoisData && (
+              <div className="whois-panel">
+                <div className="whois-row"><span className="whois-label">registrar</span><span className="whois-value">{whoisData.registrar || '—'}</span></div>
+                <div className="whois-row"><span className="whois-label">created</span><span className="whois-value">{whoisData.create_date ? whoisData.create_date.slice(0, 10) : '—'}</span></div>
+                <div className="whois-row"><span className="whois-label">expires</span><span className="whois-value">{whoisData.expire_date ? whoisData.expire_date.slice(0, 10) : '—'}</span></div>
+              </div>
+            )}
+
             <div className="ledger-row">
               <span className="ledger-k">model</span>
               <span className="ledger-v">{result.models?.narrative || 'unknown'}</span>
@@ -1212,10 +1235,42 @@ const FINAL_CSS = `
 `;
 
 function TechStackFooter() {
+  const stack = [
+    { name: 'React', url: 'https://react.dev', icon: '⚛' },
+    { name: 'TypeScript', url: 'https://www.typescriptlang.org', icon: 'TS' },
+    { name: 'Node.js', url: 'https://nodejs.org', icon: '⬢' },
+    { name: 'Vite', url: 'https://vitejs.dev', icon: '⚡' },
+    { name: 'Vercel', url: 'https://vercel.com', icon: '▲' },
+    { name: 'Sentry', url: 'https://sentry.io', icon: '🛡' },
+    { name: 'Tailwind', url: 'https://tailwindcss.com', icon: '🌊' },
+    { name: 'Gemma', url: 'https://ai.google.dev/gemma', icon: '💎' },
+    { name: 'Ollama', url: 'https://ollama.com', icon: '🦙' },
+    { name: 'ElevenLabs', url: 'https://elevenlabs.io', icon: '11' },
+    { name: 'SerpApi', url: 'https://serpapi.com', icon: '🔍' },
+    { name: 'Mastra', url: 'https://mastra.ai', icon: 'M' },
+    { name: 'Backboard', url: 'https://backboard.io', icon: 'B' },
+    { name: 'Wikipedia', url: 'https://www.wikipedia.org', icon: 'W' },
+    { name: 'Wayback', url: 'https://archive.org/web/', icon: '🕒' },
+  ];
+
   return (
-    <footer className="footer-ossuary">
-      <div>built with React · TypeScript · Node.js · Vite · Vercel · Sentry · Tailwind · Gemma · Ollama · ElevenLabs · SerpApi · Mastra · Backboard · Wikipedia · Wayback</div>
-      <div className="footer-ossuary-links">
+    <footer className="ossuary-footer-container">
+      <div className="tech-grid-ascii">
+        {stack.map((tech) => (
+          <a
+            key={tech.name}
+            href={tech.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="tech-box"
+            title={tech.name}
+          >
+            <span className="tech-icon">{tech.icon}</span>
+            <span className="tech-name">{tech.name}</span>
+          </a>
+        ))}
+      </div>
+      <div className="footer-links-ascii">
         <a href="https://ossuary.saturumah.net" target="_blank" rel="noopener noreferrer">OSSUARY</a>
         <span className="dot">·</span>
         <a href="https://hacktoberfest.com/?utm_source=dev.to&utm_medium=challenge-page&utm_campaign=hacktoberfest-2026&utm_content=week4-home-button" target="_blank" rel="noopener noreferrer">hacktoberfest 2026</a>

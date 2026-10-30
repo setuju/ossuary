@@ -1748,3 +1748,151 @@ html, body, #root {
   margin-right: 1rem;
 }
 .whois-panel .label { color: rgba(180, 165, 135, 0.45); }
+
+/* ─── OSSUARY ASCII FOOTER & WHOIS PANEL (Modern CSS) ─── */
+.ossuary-footer-container {
+  container-type: inline-size;
+  margin: 3rem auto 2rem;
+  max-width: 900px;
+  width: 100%;
+  padding: 0 1rem;
+  font-family: var(--mono);
+  color: rgba(200, 180, 140, 0.8);
+}
+
+.tech-grid-ascii {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+
+  @container (max-width: 500px) {
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 0.5rem;
+  }
+}
+
+.tech-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(138, 122, 90, 0.25);
+  border-radius: 4px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '┌──────────────────┐';
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 0.5rem;
+    color: rgba(138, 122, 90, 0.4);
+    letter-spacing: 1px;
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '└──────────────────┘';
+    position: absolute;
+    bottom: 2px;
+    left: 4px;
+    font-size: 0.5rem;
+    color: rgba(138, 122, 90, 0.4);
+    letter-spacing: 1px;
+    pointer-events: none;
+  }
+
+  & .tech-icon {
+    font-size: 1.2rem;
+    margin-bottom: 0.3rem;
+    line-height: 1;
+  }
+
+  & .tech-name {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  &:hover {
+    border-color: rgba(200, 180, 140, 0.8);
+    background: rgba(200, 180, 140, 0.05);
+    box-shadow: 0 0 15px rgba(200, 180, 140, 0.1);
+    transform: translateY(-2px);
+
+    & .tech-name { color: #fff; }
+    &::before, &::after { color: rgba(200, 180, 140, 0.8); }
+  }
+
+  &:has(.tech-icon:hover) {
+    border-color: #fff;
+  }
+}
+
+.footer-links-ascii {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed rgba(138, 122, 90, 0.25);
+
+  & a {
+    color: rgba(200, 180, 140, 0.6);
+    text-decoration: none;
+    transition: color 0.2s;
+
+    &:hover {
+      color: #fff;
+      text-shadow: 0 0 8px rgba(200, 180, 140, 0.5);
+    }
+  }
+
+  & .dot {
+    color: rgba(138, 122, 90, 0.4);
+  }
+}
+
+.whois-panel {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-left: 2px solid rgba(200, 180, 140, 0.4);
+  font-size: 0.7rem;
+  line-height: 1.6;
+  text-align: left;
+
+  & .whois-row {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed rgba(138, 122, 90, 0.15);
+    padding: 0.2rem 0;
+
+    &:last-child { border-bottom: none; }
+  }
+
+  & .whois-label {
+    color: rgba(180, 165, 135, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  & .whois-value {
+    color: rgba(220, 205, 175, 0.9);
+  }
+}
