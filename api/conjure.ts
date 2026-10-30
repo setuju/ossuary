@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { saveGhostRecord, saveGhostAudio } from '../lib/persist';
 import {
   profilerAgent,
   fallbackProfilerAgent,
@@ -632,7 +633,23 @@ export default async function handler(req: IncomingMessage & { body?: any }, res
       await Sentry.flush(1500).catch(() => {});
     }
 
-    return sendJson(200, {
+        // ── PERSIST TO MONGODB (non-blocking) ──
+    const saveDomain = (req.body && req.body.footprint && req.body.footprint.domain) || 'unknown';
+    Promise.allSettled([
+      saveGhostRecord({
+        domain: saveDomain,
+        profile,
+        narrative,
+        waybackSnapshot: req.body?.footprint?.wayback?.closestTimestamp,
+        modelUsed: 'gemma4:31b-cloud',
+        summonedAt: new Date(),
+      }),
+      speechResult.audioBase64
+        ? saveGhostAudio(saveDomain, speechResult.audioBase64, Date.now())
+        : Promise.resolve(false),
+    ]).catch((e) => console.error('[persist] error:', e));
+
+return sendJson(200, {
       profile,
       narrative,
       audio: speechResult.audioBase64,
