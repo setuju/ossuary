@@ -246,6 +246,14 @@ function determineLifeStatus(
   return { status: 'deceased', reason: 'Last archived snapshot is from ' + year + '. The ghost has faded.' };
 }
 
+
+// ── Failsafe: Known dead domains (bypass Wikipedia timeout) ──
+const KNOWN_DEAD_DOMAINS: Record<string, number> = {
+  'vine.co': 2017, 'geocities.com': 2009, 'friendster.com': 2015,
+  'pets.com': 2000, 'clubpenguin.com': 2017, 'megaupload.com': 2012,
+  'grooveshark.com': 2015, 'sixdegrees.com': 2001, 'boo.com': 2000,
+};
+
 export default async function handler(req: any, res: any) {
   try {
     // ── Rate limit ──
@@ -278,7 +286,10 @@ export default async function handler(req: any, res: any) {
 
     // ── Build response ──
         // ── GATE REFUSE-TO-LIE ──
-    const lifeCheck = determineLifeStatus(lastAlive, waybackResult);
+    const hardcodedDeathYear = KNOWN_DEAD_DOMAINS[rawDomain];
+    const lifeCheck = hardcodedDeathYear
+      ? { status: 'deceased' as const, reason: `Known dead domain since ${hardcodedDeathYear}.` }
+      : determineLifeStatus(lastAlive, waybackResult);
     if (lifeCheck.status === 'alive') {
       return res.status(422).json({
         error: 'still_breathing',
