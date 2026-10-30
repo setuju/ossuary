@@ -1,13 +1,18 @@
 services:
   - type: web
-    name: ossuary
+    name: ossuary-backend
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build
+    region: singapore
+    branch: main
+    buildCommand: npm install
     startCommand: npm start
+    healthCheckPath: /health
     envVars:
-      - key: NODE_VERSION
-        value: 20.10.0
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
       - key: OLLAMA_API_KEY
         sync: false
       - key: OLLAMA_BASE_URL
@@ -16,15 +21,19 @@ services:
         sync: false
       - key: OPENROUTER_API_KEY
         sync: false
-      - key: SENTRY_DSN
-        sync: false
-      - key: VITE_SENTRY_DSN
-        sync: false
-      - key: BACKBOARD_API_KEY
-        sync: false
       - key: ELEVENLABS_API_KEY
         sync: false
       - key: ELEVENLABS_VOICE_ID
-        value: vflhOcwDlonnVFj3wJqz
+        value: pNInz6obpgDQGcFmaJgB
+      - key: BACKBOARD_API_KEY
+        sync: false
       - key: SERPAPI_KEY
         sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: IP2WHOIS_API_KEY
+        sync: false
+      - key: WHOISXMLAPI_API_KEY
+        sync: false
+      - key: DISABLE_ELEVENLABS
+        value: "true"

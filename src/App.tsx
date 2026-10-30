@@ -2,6 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { DIEGETIC_MESSAGES } from './sentry/diegetic.ts';
 import { parseWikiExtract, extractWikiEra } from './utils/wikiParser.ts';
 
+// API base — empty string = relative (Vercel). Set VITE_API_URL for Render.
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') || '';
+
+
 // ─── Types ─────────────────────────────────────────────────────────
 interface ReconFootprint {
   domain: string;
@@ -182,7 +186,7 @@ function useWikiFragment(domain: string, enabled: boolean) {
 
     (async () => {
       try {
-        const res = await fetch('/api/wiki?title=' + encodeURIComponent(cleanDomain));
+        const res = await fetch(API_BASE + '/api/wiki?title=' + encodeURIComponent(cleanDomain));
         if (!res.ok) { setTried(true); return; }
         const data = await res.json();
         if (!data || !data.ok || !data.extract) { setTried(true); return; }
@@ -224,7 +228,7 @@ function useEchoes(domain: string, enabled: boolean) {
   useEffect(() => {
     if (!enabled || !domain) return;
     setLoading(true);
-    fetch('/api/echoes', {
+    fetch(API_BASE + '/api/echoes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ domain }),
@@ -338,7 +342,7 @@ export default function App() {
     try {
       let reconData: ReconFootprint;
       try {
-        const res = await fetch('/api/recon', {
+        const res = await fetch(API_BASE + '/api/recon', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ domain }),
@@ -368,7 +372,7 @@ export default function App() {
 
       let conjuredData: ConjureResult;
       try {
-        const res = await fetch('/api/conjure', {
+        const res = await fetch(API_BASE + '/api/conjure', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ footprint: reconData, force: shouldForce }),
@@ -786,7 +790,7 @@ function GhostScreen({
     let active = true;
     const clean = domain.replace(/^www\./, '').trim();
     if (!clean) return;
-    fetch(`/api/whois?domain=${encodeURIComponent(clean)}`)
+    fetch(`${API_BASE}/api/whois?domain=${encodeURIComponent(clean)}`)
       .then(r => r.json())
       .then(d => { if (active && d && d.ok) setWhoisData(d); })
       .catch(() => {});
