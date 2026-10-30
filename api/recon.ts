@@ -1,17 +1,14 @@
-export const maxDuration = 30; // Vercel max duration
+export const maxDuration = 30;
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
-const fetchWithTimeout = (url: string, opts: any = {}, ms = 4000) =>
-  fetch(url, { ...opts, signal: AbortSignal.timeout(ms) });
-
 import * as dns from 'node:dns/promises';
 import * as net from 'node:net';
+import * as Sentry from '@sentry/node';
 import {
   DIEGETIC_MESSAGES,
   diegeticFor,
   logParanormalTelemetry,
 } from '../src/sentry/diegetic.ts';
-import * as Sentry from '@sentry/node';
 
 try {
   if (process.env.SENTRY_DSN) {
@@ -36,91 +33,98 @@ function checkRateLimit(ip: string): boolean {
     rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
     return true;
   }
-  if (record.count >= MAX_REQUESTS_PER_WINDOW) {
-    return false;
-  }
+  if (record.count >= MAX_REQUESTS_PER_WINDOW) return false;
   record.count += 1;
   return true;
 }
 
-const DOMAIN_REGEX = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}$/;
-const IPV4_REGEX = /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/;
-
-export interface ReconFootprint {
-  domain: string;
-  target: string;
-  dns: {
-    resolved: boolean;
-    addresses: string[];
-    error: string | null;
-  };
-  ping: {
-    alive: boolean;
-    latencyMs: number | null;
-    errorCode: string | null;
-    diegeticStatus: string;
-  };
-  whois: {
-    status: 'active' | 'expired' | 'unregistered' | 'error';
-    registrar?: string;
-    creationDate?: string;
-    expirationDate?: string;
-    rawSnippet?: string;
-    diegeticNotice?: string;
-  };
-  wayback: {
-    hasSnapshot: boolean;
-    closestTimestamp?: string;
-    earliestTimestamp?: string;
-    lastAliveTimestamp?: string;
-    snapshotUrl?: string;
-    status?: number;
-    error?: string | null;
-    diegeticNotice?: string;
-  };
-  memory?: {
-    remembered: boolean;
-    lastSeen?: string;
-  };
-  timestamp: string;
+// ── FAIL-SAFE WRAPPER: race a promise against a timeout ──
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
 }
 
-async function probeHost(host: string, port = 80, timeoutMs = 3500): Promise<{ alive: boolean; latencyMs: number | null; errorCode: string | null }> {
-  return new Promise((resolve) => {
-    const startTime = Date.now();
+// ── DNS resolution with hard timeout ──
+async function resolveDns(domain: string): Promise<{ resolved: boolean; addresses: string[]; error: string | null }> {
+  try {
+    const result = await withTimeout(
+      dns.resolve4(domain).catch(() => dns.resolve6(domain)),
+      3500,
+      [] as string[],
+    );
+    if (Array.isArray(result) && result.length > 0) {
+      return { resolved: true, addresses: result, error: null };
+    }
+    return { resolved: false, addresses: [], error: 'NO_A_RECORD' };
+  } catch (e: any) {
+    return { resolved: false, addresses: [], error: e?.code || 'DNS_FAIL' };
+  }
+}
+
+// ── Ping with timeout ──
+async function probePing(domain: string, timeoutMs = 3000): Promise<{ alive: boolean; latencyMs: number | null; errorCode: string | null }> {
+  const start = Date.now();
+  try {
     const socket = new net.Socket();
-    let resolved = false;
-
-    const timer = setTimeout(() => {
-      if (!resolved) {
-        resolved = true;
+    return await new Promise((resolve) => {
+      const timer = setTimeout(() => {
         socket.destroy();
-        resolve({ alive: false, latencyMs: null, errorCode: 'ETIMEDOUT' });
-      }
-    }, timeoutMs);
-
-    socket.connect(port, host, () => {
-      if (!resolved) {
-        resolved = true;
+        resolve({ alive: false, latencyMs: null, errorCode: 'TIMEOUT' });
+      }, timeoutMs);
+      socket.connect(443, domain, () => {
         clearTimeout(timer);
-        const latencyMs = Date.now() - startTime;
-        socket.end();
-        resolve({ alive: true, latencyMs, errorCode: null });
-      }
-    });
-
-    socket.on('error', (err: any) => {
-      if (!resolved) {
-        resolved = true;
+        const latency = Date.now() - start;
+        socket.destroy();
+        resolve({ alive: true, latencyMs: latency, errorCode: null });
+      });
+      socket.on('error', (err: any) => {
         clearTimeout(timer);
         socket.destroy();
-        resolve({ alive: false, latencyMs: null, errorCode: err.code || 'ECONNREFUSED' });
-      }
+        resolve({ alive: false, latencyMs: null, errorCode: err?.code || 'CONN_REFUSED' });
+      });
     });
-  });
+  } catch {
+    return { alive: false, latencyMs: null, errorCode: 'PROBE_FAIL' };
+  }
 }
 
-async function fetchLastAliveSnapshot(domain: string, timeoutMs = 5000): Promise<string | undefined> {
+// ── WHOIS / RDAP with timeout ──
+async function fetchWhois(domain: string, timeoutMs = 4000): Promise<{ status: string; rawSnippet?: string }> {
+  try {
+    const res = await fetch(`https://rdap.org/domain/${encodeURIComponent(domain)}`, {
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: { Accept: 'application/rdap+json' },
+    });
+    if (res.ok) return { status: 'active' };
+    if (res.status === 404) return { status: 'not_found' };
+    return { status: 'error', rawSnippet: `RDAP HTTP ${res.status}` };
+  } catch {
+    return { status: 'error', rawSnippet: 'RDAP timeout/network' };
+  }
+}
+
+// ── Wayback CDX with timeout ──
+async function fetchWayback(domain: string, timeoutMs = 4000): Promise<{ hasSnapshot: boolean; closestTimestamp?: string }> {
+  try {
+    const res = await fetch(
+      `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(domain)}&output=json&limit=1&filter=statuscode:200`,
+      { signal: AbortSignal.timeout(timeoutMs) },
+    );
+    if (!res.ok) return { hasSnapshot: false };
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 1 && Array.isArray(data[1]) && data[1][1]) {
+      return { hasSnapshot: true, closestTimestamp: String(data[1][1]) };
+    }
+    return { hasSnapshot: false };
+  } catch {
+    return { hasSnapshot: false };
+  }
+}
+
+// ── Wikipedia death year (with timeout) ──
+async function fetchLastAliveSnapshot(domain: string, timeoutMs = 4000): Promise<string | undefined> {
   try {
     const cleanDomain = domain.replace(/^www\./, '').trim();
     const prefix = cleanDomain.split('.')[0] || cleanDomain;
@@ -141,14 +145,10 @@ async function fetchLastAliveSnapshot(domain: string, timeoutMs = 5000): Promise
 
     let hitTitle: string | null = null;
     const exactCandidates = [
-      cleanDomain,                 // vine.co
-      cap + ' (service)',
-      cap + ' (website)',
-      cap + ' (app)',
-      cap + ' (social media)',
-      cap + ' (platform)',
-      cap + '.com',
-      cap,
+      cleanDomain,
+      cap + ' (service)', cap + ' (website)', cap + ' (app)',
+      cap + ' (social media)', cap + ' (platform)',
+      cap + '.com', cap,
     ];
     for (const cand of exactCandidates) {
       const data = await fetchJson(base + '?action=query&titles=' + encodeURIComponent(cand) + '&format=json&redirects=1&prop=pageprops');
@@ -159,7 +159,6 @@ async function fetchLastAliveSnapshot(domain: string, timeoutMs = 5000): Promise
       hitTitle = pageObj.title;
       break;
     }
-
     if (!hitTitle) {
       const searchCandidates = [cleanDomain, prefix + ' website', prefix + ' service', prefix + ' app', prefix];
       for (const cand of searchCandidates) {
@@ -182,7 +181,6 @@ async function fetchLastAliveSnapshot(domain: string, timeoutMs = 5000): Promise
         if (hitTitle) break;
       }
     }
-
     if (!hitTitle) return undefined;
 
     const extractData = await fetchJson(base + '?action=query&prop=extracts|pageimages&explaintext=1&exintro=1&titles=' + encodeURIComponent(hitTitle) + '&pithumbsize=600&format=json&redirects=1');
@@ -207,7 +205,8 @@ async function fetchLastAliveSnapshot(domain: string, timeoutMs = 5000): Promise
     }
     if (!deathYear) return undefined;
 
-    const cdxRes = await fetchWithTimeout('https://web.archive.org/cdx/search/cdx?url=' + encodeURIComponent(domain) + '&output=json&to=' + deathYear + '1231&filter=statuscode:200&limit=-1',
+    const cdxRes = await fetch(
+      'https://web.archive.org/cdx/search/cdx?url=' + encodeURIComponent(domain) + '&output=json&to=' + deathYear + '1231&filter=statuscode:200&limit=-1',
       { signal: AbortSignal.timeout(timeoutMs), headers }
     );
     if (!cdxRes.ok) return undefined;
@@ -219,278 +218,60 @@ async function fetchLastAliveSnapshot(domain: string, timeoutMs = 5000): Promise
   return undefined;
 }
 
-async function fetchWaybackEarliest(domain: string, timeoutMs = 4000): Promise<string | undefined> {
-  try {
-    const res = await fetchWithTimeout(`https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(domain)}&output=json&limit=1&filter=statuscode:200`,
-      {
-        signal: AbortSignal.timeout(timeoutMs),
-        headers: { 'User-Agent': 'OssuaryGhostRecon/1.0' },
-      }
-    );
-    if (!res.ok) return undefined;
-    const data = await res.json();
-    if (Array.isArray(data) && data.length > 1 && Array.isArray(data[1]) && data[1][1]) {
-      return String(data[1][1]);
-    }
-    return undefined;
-  } catch {
-    return undefined;
+// ── MAIN HANDLER ──
+export default async function handler(req: any, res: any) {
+  // Rate limit
+  const ip = (req.headers?.['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown';
+  if (!checkRateLimit(ip)) {
+    return res.status(429).json({ error: 'rate_limited' });
   }
-}
 
-async function fetchWayback(domain: string, timeoutMs = 4500) {
-  try {
-    const res = await fetchWithTimeout(`https://archive.org/wayback/available?url=${encodeURIComponent(domain)}`, {
-      signal: AbortSignal.timeout(timeoutMs),
-      headers: {
-        'User-Agent': 'OssuaryGhostRecon/1.0 (+https://ossuary.dev)',
-      },
-    });
-
-    if (!res.ok) {
-      logParanormalTelemetry(Sentry, `Wayback HTTP ${res.status}`, {
-        system: 'wayback',
-        errorCode: 'WAYBACK_404',
-        domain,
-        details: { status: res.status },
-      });
-      return {
-        hasSnapshot: false,
-        error: `Wayback returned HTTP ${res.status}`,
-        diegeticNotice: DIEGETIC_MESSAGES.GHOST_FORGOTTEN,
-      };
-    }
-
-    const data = await res.json();
-    const closest = data.archived_snapshots?.closest;
-
-    if (closest && closest.available) {
-      return {
-        hasSnapshot: true,
-        closestTimestamp: closest.timestamp,
-        snapshotUrl: closest.url,
-        status: Number.parseInt(closest.status, 10),
-      };
-    }
-
-    return {
-      hasSnapshot: false,
-      diegeticNotice: DIEGETIC_MESSAGES.GHOST_FORGOTTEN,
-    };
-  } catch (error: any) {
-    const isTimeout = error?.name === 'TimeoutError';
-    const errorCode = isTimeout ? 'ETIMEDOUT' : 'WAYBACK_404';
-
-    logParanormalTelemetry(Sentry, `Wayback query exception: ${error?.message || error}`, {
-      system: 'wayback',
-      errorCode,
-      domain,
-      details: error,
-    });
-
-    return {
-      hasSnapshot: false,
-      error: isTimeout ? 'ETIMEDOUT' : (error?.message || 'UNKNOWN'),
-      diegeticNotice: DIEGETIC_MESSAGES.GHOST_FORGOTTEN,
-    };
+  // Parse domain
+  let domain = '';
+  if (req.body && typeof req.body.domain === 'string') domain = req.body.domain;
+  else if (req.query && typeof req.query.domain === 'string') domain = req.query.domain;
+  else {
+    try { domain = new URL(req.url || '/', 'http://localhost').searchParams.get('domain') || ''; }
+    catch { domain = ''; }
   }
-}
+  if (!domain) return res.status(400).json({ error: 'missing_domain' });
 
-async function fetchWhoisRdap(domain: string, timeoutMs = 4500) {
-  try {
-    const res = await fetchWithTimeout(`https://rdap.org/domain/${encodeURIComponent(domain)}`, {
-      signal: AbortSignal.timeout(timeoutMs),
-      headers: { Accept: 'application/rdap+json' },
-    });
+  const rawDomain = domain.replace(/^www\./, '').trim().toLowerCase();
+  if (!rawDomain) return res.status(400).json({ error: 'empty_domain' });
 
-    if (res.status === 404) {
-      return {
-        status: 'unregistered' as const,
-        diegeticNotice: DIEGETIC_MESSAGES.GHOST_UNRECORDED,
-      };
-    }
+  // Run all lookups in parallel with hard timeouts
+  const [
+    dnsResult,
+    pingResult,
+    whoisResult,
+    waybackResult,
+    lastAlive,
+  ] = await Promise.all([
+    withTimeout(resolveDns(rawDomain), 3500, { resolved: false, addresses: [], error: 'TIMEOUT' }),
+    withTimeout(probePing(rawDomain, 3000), 3200, { alive: false, latencyMs: null, errorCode: 'TIMEOUT' }),
+    withTimeout(fetchWhois(rawDomain, 4000), 4200, { status: 'error', rawSnippet: 'TIMEOUT' }),
+    withTimeout(fetchWayback(rawDomain, 4000), 4200, { hasSnapshot: false }),
+    withTimeout(fetchLastAliveSnapshot(rawDomain, 4500), 4700, undefined),
+  ]);
 
-    if (!res.ok) {
-      logParanormalTelemetry(Sentry, `RDAP status ${res.status}`, {
-        system: 'whois',
-        errorCode: 'WHOIS_EMPTY',
-        domain,
-      });
-      return {
-        status: 'error' as const,
-        rawSnippet: `RDAP HTTP ${res.status}`,
-        diegeticNotice: DIEGETIC_MESSAGES.GHOST_UNRECORDED,
-      };
-    }
-
-    const rdap = await res.json();
-    const registrarEvent = rdap.events?.find((e: any) => e.eventAction === 'registration');
-    const expirationEvent = rdap.events?.find((e: any) => e.eventAction === 'expiration');
-
-    return {
-      status: 'active' as const,
-      registrar: rdap.entities?.[0]?.vcardArray?.[1]?.[1]?.[3] || rdap.handle || 'Unknown Registrar',
-      creationDate: registrarEvent?.eventDate,
-      expirationDate: expirationEvent?.eventDate,
-    };
-  } catch (error: any) {
-    const isTimeout = error?.name === 'TimeoutError';
-    const errorCode = isTimeout ? 'ETIMEDOUT' : 'WHOIS_EMPTY';
-
-    logParanormalTelemetry(Sentry, `WHOIS lookup failed: ${error?.message || error}`, {
-      system: 'whois',
-      errorCode,
-      domain,
-      details: error,
-    });
-
-    return {
-      status: 'error' as const,
-      rawSnippet: isTimeout ? 'ETIMEDOUT' : (error?.message || 'LOOKUP_FAILED'),
-      diegeticNotice: DIEGETIC_MESSAGES.GHOST_UNRECORDED,
-    };
-  }
-}
-
-async function fetchBackboardMemory(domain: string): Promise<{ remembered: boolean; lastSeen?: string }> {
-  const apiKey = process.env.BACKBOARD_API_KEY;
-  if (!apiKey) return { remembered: false };
-  try {
-    const res = await fetchWithTimeout(`https://app.backboard.io/api/threads?domain=${encodeURIComponent(domain)}`, {
-      headers: { 'X-API-Key': apiKey },
-      signal: AbortSignal.timeout(1500),
-    });
-    if (!res.ok) return { remembered: false };
-    const data = await res.json();
-    return { remembered: true, lastSeen: data.last_seen };
-  } catch {
-    return { remembered: false };
-  }
-}
-
-export default async function handler(req: IncomingMessage & { body?: any }, res: ServerResponse) {
-  const sendJson = (status: number, data: any) => {
-    res.statusCode = status;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(data));
+  // Build response
+  const footprint: any = {
+    domain: rawDomain,
+    target: dnsResult.addresses[0] || rawDomain,
+    dns: dnsResult,
+    ping: {
+      ...pingResult,
+      diegeticStatus: pingResult.alive ? 'The ghost is listening.' : 'The ghost has gone quiet.',
+    },
+    whois: whoisResult,
+    wayback: waybackResult,
   };
 
-  if (req.method !== 'POST') {
-    return sendJson(405, { error: 'Method Not Allowed' });
+  if (lastAlive) {
+    footprint.wayback.lastAliveTimestamp = lastAlive;
+    footprint.wayback.closestTimestamp = lastAlive;
+    footprint.wayback.snapshotUrl = `https://web.archive.org/web/${lastAlive}/http://${rawDomain}/`;
   }
 
-  const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || '127.0.0.1';
-  if (!checkRateLimit(clientIp)) {
-    return sendJson(429, { error: DIEGETIC_MESSAGES.RATE_LIMIT_ETHER });
-  }
-
-  let body = req.body;
-  if (!body && typeof req.on === 'function') {
-    try {
-      const chunks: Buffer[] = [];
-      for await (const chunk of req) {
-        chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
-      }
-      body = JSON.parse(Buffer.concat(chunks).toString('utf-8'));
-    } catch {
-      return sendJson(400, { error: 'Malformed JSON payload.' });
-    }
-  }
-
-  const rawDomain = (body?.domain || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-  if (!rawDomain || (!DOMAIN_REGEX.test(rawDomain) && !IPV4_REGEX.test(rawDomain))) {
-    return sendJson(400, { error: 'Invalid domain or IP address format.' });
-  }
-
-  try {
-    let addresses: string[] = [];
-    let lastAliveSnapshot: string | undefined = undefined;
-    try { lastAliveSnapshot = await fetchLastAliveSnapshot(rawDomain, 5000); } catch {}
-    let dnsError: string | null = null;
-    try {
-      addresses = await dns.resolve4(rawDomain);
-    } catch (err: any) {
-      dnsError = err.code || 'ENOTFOUND';
-    }
-
-    const [probeResult, whoisResult, waybackResult, earliestWayback] = await Promise.all([
-      probeHost(addresses[0] || rawDomain, 80, 3500),
-      fetchWhoisRdap(rawDomain, 4500),
-      fetchWayback(rawDomain, 4500),
-      fetchWaybackEarliest(rawDomain, 4000),
-    ]);
-
-    const memory = await fetchBackboardMemory(rawDomain);
-
-    const code = probeResult.errorCode || (probeResult.alive ? 'SUCCESS' : (dnsError || 'ECONNREFUSED'));
-    const diegeticStatus = diegeticFor(code);
-
-    if (Sentry && !probeResult.alive) {
-      logParanormalTelemetry(Sentry, `Probe severed: ${code}`, {
-        system: 'socket',
-        errorCode: code,
-        domain: rawDomain,
-      });
-      await Sentry.flush(1500).catch(() => {});
-    }
-
-    const footprint: ReconFootprint = {
-      domain: rawDomain,
-      target: addresses[0] || rawDomain,
-      dns: {
-        resolved: addresses.length > 0,
-        addresses,
-        error: dnsError,
-      },
-      ping: {
-        alive: probeResult.alive,
-        latencyMs: probeResult.latencyMs,
-        errorCode: probeResult.errorCode,
-        diegeticStatus,
-      },
-      whois: whoisResult,
-      wayback: {
-        ...waybackResult,
-        earliestTimestamp: earliestWayback,
-        ...((!waybackResult.hasSnapshot && earliestWayback) ? {
-          hasSnapshot: true,
-          closestTimestamp: earliestWayback,
-          snapshotUrl: `https://web.archive.org/web/${earliestWayback}/http://${rawDomain}/`,
-          status: 200,
-        } : {}),
-      },
-      memory,
-      timestamp: new Date().toISOString(),
-    };
-
-    if (lastAliveSnapshot) {
-      footprint.wayback.lastAliveTimestamp = lastAliveSnapshot;
-      footprint.wayback.closestTimestamp = lastAliveSnapshot;
-      footprint.wayback.snapshotUrl = `https://web.archive.org/web/${lastAliveSnapshot}/http://${rawDomain}/`;
-      footprint.wayback.hasSnapshot = true;
-    }
-
-
-    if (Sentry) {
-      await Sentry.flush(1000).catch(() => {});
-    }
-
-    return sendJson(200, footprint);
-  } catch (error: any) {
-    if (Sentry) {
-      logParanormalTelemetry(Sentry, `Recon exception: ${error?.message || error}`, {
-        system: 'socket',
-        errorCode: 'SEANCE_SEVERED',
-        domain: rawDomain,
-        details: error,
-        level: 'error',
-      });
-      await Sentry.flush(2000).catch(() => {});
-    }
-
-    return sendJson(500, {
-      error: DIEGETIC_MESSAGES.SEANCE_SEVERED,
-      details: error?.message || 'UNKNOWN_ERROR',
-    });
-  }
+  return res.status(200).json(footprint);
 }
