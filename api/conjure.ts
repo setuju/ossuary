@@ -441,10 +441,21 @@ async function generateSpeechAudio(text: string, timeoutMs = 8000): Promise<{ au
   const apiKey = process.env.ELEVENLABS_API_KEY;
   const voiceId = process.env.ELEVENLABS_VOICE_ID || 'vflhOcwDlonnVFj3wJqz';
 
-  // ── GUARD: Zero API calls if key is missing or placeholder ──
+  // ── GUARD 1: Zero API calls if key is missing or placeholder ──
   if (!apiKey || apiKey.trim() === '' || apiKey.startsWith('ELEVENLABS_API_KEY_PLACEHOLDER') || apiKey === 'your_key_here') {
     return { audioBase64: null, errorNotice: DIEGETIC_MESSAGES.GHOST_MUTE };
   }
+
+  // ── GUARD 2: Kill Switch (Credit Saver) ──
+  // Set DISABLE_ELEVENLABS=true in .env to prevent ANY API calls (useful during testing)
+  if (process.env.DISABLE_ELEVENLABS === 'true') {
+    return { audioBase64: null, errorNotice: DIEGETIC_MESSAGES.GHOST_MUTE };
+  }
+
+  // ── GUARD 3: Truncate text to save credits ──
+  // 500 characters = ~250 credits instead of ~1000
+  const MAX_CHARS = 500;
+  const safeText = text.length > MAX_CHARS ? text.slice(0, MAX_CHARS) + '...' : text;
 
   try {
     const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
@@ -456,8 +467,8 @@ async function generateSpeechAudio(text: string, timeoutMs = 8000): Promise<{ au
         Accept: 'audio/mpeg',
       },
       body: JSON.stringify({
-        text,
-        model_id: 'eleven_multilingual_v2',
+        text: safeText,
+        model_id: 'eleven_flash_v2',
         voice_settings: {
           stability: 0.35,
           similarity_boost: 0.75,
