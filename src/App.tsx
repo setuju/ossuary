@@ -1268,7 +1268,14 @@ function TechStackFooter() {
     { name: 'Backboard', url: 'https://backboard.io', icon: 'B' },
     { name: 'Wikipedia', url: 'https://www.wikipedia.org', icon: 'W' },
     { name: 'Wayback', url: 'https://archive.org/web/', icon: '🕒' },
-  ];
+  
+    { name: 'Render', url: 'https://render.com', icon: '🔺' },
+    { name: 'MongoDB', url: 'https://mongodb.com', icon: '🍃' },
+    { name: 'TigerData', url: 'https://tigerdata.com', icon: '🐯' },
+    { name: 'OpenRouter', url: 'https://openrouter.ai', icon: '🔀' },
+    { name: 'GenAI', url: 'https://ai.google.dev', icon: '✦' },
+    { name: 'GitHub', url: 'https://github.com/setuju/ossuary', icon: '🐙' },
+];
 
   return (
     <footer className="ossuary-footer-container">

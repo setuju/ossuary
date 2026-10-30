@@ -2096,3 +2096,11 @@ html, body, #root {
   color: var(--fg-soft) !important; /* brighter than --dim */
   line-height: 1.6 !important;
 }
+
+/* ── Hide redundant bottom-strip ──
+   The small "hacktoberfest 2026 · ghost in the machine" strip at the bottom
+   is redundant. TechStackFooter already contains the same info with proper
+   links to hacktoberfest.com and dev.to/challenges. */
+.bottom-strip {
+  display: none !important;
+}
