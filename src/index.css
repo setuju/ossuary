@@ -2066,3 +2066,33 @@ html, body, #root {
 .ossuary-root.theme-light .ledger { color: #5a534a !important; }
 .ossuary-root.theme-light .ledger-k { color: #7a7268 !important; }
 .ossuary-root.theme-light .ledger-v { color: #2a2622 !important; }
+
+/* ── SERPAPI ECHOES SECTION WCAG FIX ── */
+.echoes-section {
+  padding: 32px 8px !important;
+}
+.echoes-label {
+  font-size: 12px !important;
+  color: var(--fg-soft) !important;
+  letter-spacing: 0.25em !important;
+}
+.echoes-tag {
+  font-size: 11px !important;
+  color: #e06c6c !important; /* brighter red */
+  letter-spacing: 0.15em !important;
+}
+.echo-item {
+  opacity: 1 !important; /* remove fade */
+  padding: 8px 0 !important;
+  border-bottom: 1px dotted rgba(138, 122, 90, 0.4) !important;
+}
+.echo-title {
+  font-size: 18px !important;
+  color: var(--amber) !important;
+  margin-bottom: 4px !important;
+}
+.echo-snippet {
+  font-size: 15px !important;
+  color: var(--fg-soft) !important; /* brighter than --dim */
+  line-height: 1.6 !important;
+}
