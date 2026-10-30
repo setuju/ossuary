@@ -6,7 +6,7 @@
   --bg-2: #0b0a09;
   --fg: #ded7c8;
   --fg-soft: #b8b0a0;
-  --dim: #5a534a;
+  --dim: #8a8278;  /* WCAG AA fix: was #5a534a (2.7:1) → 5.3:1 */
   --dim-2: #3a3630;
   --blood: #8b1e1e;
   --blood-glow: rgba(139, 30, 30, 0.35);
@@ -1896,3 +1896,173 @@ html, body, #root {
     color: rgba(220, 205, 175, 0.9);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   WCAG AA CONTRAST & READABILITY FIX
+   Normal text ≥ 4.5:1, Large text ≥ 3:1. All overrides use !important.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Top & Bottom strips ── */
+.top-strip, .bottom-strip {
+  font-size: 12px !important;
+  color: var(--fg-soft) !important;
+}
+
+/* ── Ledger (footprint data) ── */
+.ledger {
+  font-size: 13px !important;
+  color: var(--fg-soft) !important;
+  line-height: 1.7 !important;
+}
+.ledger-k, .ledger-key {
+  color: var(--fg-soft) !important;
+  font-size: 13px !important;
+  letter-spacing: 0.06em !important;
+}
+.ledger-v, .ledger-val {
+  color: var(--fg) !important;
+  font-size: 13px !important;
+}
+.ledger-row { padding: 0.35rem 0 !important; }
+
+/* ── Muted text (ghost warnings) ── */
+.muted {
+  font-size: 14px !important;
+  color: var(--fg-soft) !important;
+  font-style: italic !important;
+}
+
+/* ── Memorial section ── */
+.memorial-title {
+  font-size: 12px !important;
+  color: var(--fg-soft) !important;
+  letter-spacing: 0.3em !important;
+}
+.memorial-row dt {
+  font-size: 12px !important;
+  color: var(--fg-soft) !important;
+  letter-spacing: 0.18em !important;
+}
+.memorial-row dd {
+  font-size: 18px !important;
+  color: var(--fg) !important;
+  line-height: 1.55 !important;
+}
+
+/* ── Preset relic era ── */
+.relic-era {
+  font-size: 12px !important;
+  opacity: 1 !important;
+  color: var(--fg-soft) !important;
+  letter-spacing: 0.12em !important;
+}
+.relic-domain { font-size: 15px !important; }
+
+/* ── Ghost dates ── */
+.ghost-dates .unknown {
+  opacity: 0.95 !important;
+  color: var(--fg-soft) !important;
+}
+
+/* ── Footer labels & links ── */
+.footer-label {
+  color: var(--fg-soft) !important;
+  opacity: 1 !important;
+}
+.footer-link { color: var(--fg) !important; }
+.footer-link:hover { color: var(--amber) !important; }
+
+/* ── Wiki section labels ── */
+.wiki-eyebrow { opacity: 1 !important; color: var(--amber) !important; }
+.wiki-badge { font-size: 12px !important; letter-spacing: 0.18em !important; }
+.wiki-fact-label {
+  font-size: 12px !important;
+  color: var(--fg-soft) !important;
+  letter-spacing: 0.18em !important;
+}
+.wiki-fact-value { font-size: 16px !important; color: var(--fg) !important; }
+.wiki-paragraph {
+  font-size: 18px !important;
+  color: #e8e1d4 !important;
+  line-height: 1.75 !important;
+}
+.wiki-divider-sigil { font-size: 13px !important; }
+
+/* ── Ledger toggle button ── */
+.ledger-section .link-btn, .ledger-toggle {
+  font-size: 13px !important;
+  color: var(--fg-soft) !important;
+}
+
+/* ── Tech badges (old orphaned classes, safety net) ── */
+.tech-badge { opacity: 0.9 !important; }
+.tech-text { font-size: 12px !important; color: var(--fg-soft) !important; }
+.tech-stack-label {
+  font-size: 12px !important;
+  color: var(--fg-soft) !important;
+  opacity: 1 !important;
+}
+.tech-stack-footer-meta {
+  font-size: 13px !important;
+  color: rgba(200,180,140,0.85) !important;
+}
+
+/* ── ASCII Footer (current) ── */
+.ossuary-footer-container { color: var(--fg-soft) !important; }
+.tech-box .tech-name {
+  font-size: 12px !important;
+  color: rgba(230,215,185,0.95) !important;
+  letter-spacing: 0.04em !important;
+}
+.footer-links-ascii { font-size: 13px !important; }
+.footer-links-ascii a { color: rgba(230,215,185,0.95) !important; }
+.footer-links-ascii .dot { color: rgba(210,195,165,0.7) !important; }
+.footer-ossuary {
+  font-size: 13px !important;
+  color: rgba(210,195,165,0.9) !important;
+}
+.footer-ossuary-links a { color: rgba(230,215,185,0.95) !important; }
+.footer-ossuary .dot { color: rgba(210,195,165,0.7) !important; }
+
+/* ── WHOIS panel ── */
+.whois-panel {
+  font-size: 13px !important;
+  color: rgba(230,215,185,0.95) !important;
+  line-height: 1.7 !important;
+}
+.whois-panel .label, .whois-label {
+  color: rgba(210,195,165,0.9) !important;
+}
+.whois-value, .whois-panel .whois-value {
+  color: rgba(240,230,210,0.98) !important;
+}
+.whois-row { padding: 0.35rem 0 !important; }
+
+/* ── Form placeholders ── */
+.ritual-form input::placeholder {
+  color: var(--fg-soft) !important;
+  opacity: 0.85 !important;
+}
+
+/* ── Narrative (already good, ensure max contrast) ── */
+.narrative {
+  color: #f0e7d5 !important;
+  font-size: 24px !important;
+  line-height: 1.75 !important;
+}
+
+/* ── Mobile adjustments ── */
+@media (max-width: 720px) {
+  .narrative { font-size: 20px !important; }
+  .memorial-row dt { font-size: 11px !important; }
+  .tech-text { font-size: 11px !important; }
+  .top-strip, .bottom-strip { font-size: 11px !important; }
+  .tech-box .tech-name { font-size: 11px !important; }
+  .ledger { font-size: 12px !important; }
+  .ledger-k, .ledger-key, .ledger-v, .ledger-val { font-size: 12px !important; }
+}
+
+/* ── Light theme safety ── */
+.ossuary-root.theme-light .ledger { color: #5a534a !important; }
+.ossuary-root.theme-light .ledger-k { color: #7a7268 !important; }
+.ossuary-root.theme-light .ledger-v { color: #2a2622 !important; }
