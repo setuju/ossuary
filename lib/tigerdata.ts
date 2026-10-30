@@ -9,23 +9,23 @@ export function getPool(): Pool | null {
     return null;
   }
   if (!pool) {
+    // Hapus parameter query agar tidak konflik dengan opsi ssl di bawah
+    const cleanUrl = url.split('?')[0];
     pool = new Pool({
-      connectionString: url,
+      connectionString: cleanUrl,
       max: 3,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
-      ssl: { rejectUnauthorized: false } // TigerData membutuhkan SSL
+      connectionTimeoutMillis: 10000,
+      ssl: { rejectUnauthorized: false } // Abaikan self-signed cert
     });
   }
   return pool;
 }
 
-// Fungsi init untuk membuat tabel (dipanggil manual / startup)
 export async function initTigerData() {
   const p = getPool();
   if (!p) return false;
   try {
-    // 1. Buat tabel utama
     await p.query(`
       CREATE TABLE IF NOT EXISTS ghost_events (
         id UUID DEFAULT gen_random_uuid(),
@@ -38,14 +38,13 @@ export async function initTigerData() {
         error_code TEXT
       );
     `);
-    // 2. Ubah menjadi Hypertable (Time-Series)
     await p.query(`
       SELECT create_hypertable('ghost_events', 'event_time', if_not_exists => TRUE);
     `);
-    console.log('[tigerdata] schema initialized');
+    console.log('[tigerdata] ✅ Hypertable initialized successfully!');
     return true;
   } catch (err: any) {
-    console.error('[tigerdata] init failed:', err?.message);
+    console.error('[tigerdata] ❌ init failed:', err?.message);
     return false;
   }
 }
