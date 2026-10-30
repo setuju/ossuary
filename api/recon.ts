@@ -1,3 +1,5 @@
+export const maxDuration = 30; // Vercel max duration
+
 import type { IncomingMessage, ServerResponse } from 'node:http';
 const fetchWithTimeout = (url: string, opts: any = {}, ms = 4000) =>
   fetch(url, { ...opts, signal: AbortSignal.timeout(ms) });
