@@ -1698,3 +1698,53 @@ html, body, #root {
   .tech-icon { width: 20px; height: 20px; }
   .tech-text { font-size: 8px; padding: 3px 6px; }
 }
+
+/* ─── OSSUARY FOOTER & LEDGER STYLES ─── */
+.footer-ossuary {
+  margin: 3rem auto 1.5rem;
+  max-width: 800px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  border-top: 1px solid rgba(138, 122, 90, 0.15);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(180, 165, 135, 0.5);
+}
+.footer-ossuary-links {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+.footer-ossuary-links a {
+  color: rgba(200, 180, 140, 0.6);
+  text-decoration: none;
+  transition: color 0.2s, text-shadow 0.2s;
+}
+.footer-ossuary-links a:hover {
+  color: rgba(200, 180, 140, 1);
+  text-shadow: 0 0 8px rgba(200, 180, 140, 0.3);
+}
+.footer-ossuary .dot {
+  margin: 0 0.4rem;
+  color: rgba(138, 122, 90, 0.4);
+}
+.whois-panel {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 2px solid rgba(200, 180, 140, 0.3);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: rgba(200, 180, 140, 0.7);
+  text-align: left;
+  line-height: 1.6;
+}
+.whois-panel span {
+  display: inline-block;
+  margin-right: 1rem;
+}
+.whois-panel .label { color: rgba(180, 165, 135, 0.45); }

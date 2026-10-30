@@ -135,11 +135,15 @@ async function fetchLastAliveSnapshot(domain: string, timeoutMs = 5000): Promise
     };
 
     let hitTitle: string | null = null;
-    // ── exact candidates: website/service BEFORE bare name ──
     const exactCandidates = [
-      cap + ' (service)', cap + ' (website)', cap + ' (app)',
-      cap + ' (social media)', cap + ' (platform)',
-      cap + '.com', cap, cleanDomain,
+      cleanDomain,                 // vine.co
+      cap + ' (service)',
+      cap + ' (website)',
+      cap + ' (app)',
+      cap + ' (social media)',
+      cap + ' (platform)',
+      cap + '.com',
+      cap,
     ];
     for (const cand of exactCandidates) {
       const data = await fetchJson(base + '?action=query&titles=' + encodeURIComponent(cand) + '&format=json&redirects=1&prop=pageprops');

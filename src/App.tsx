@@ -159,6 +159,7 @@ interface WikiFragment {
 
 function useWikiFragment(domain: string, enabled: boolean) {
   const [fragment, setFragment] = useState<WikiFragment | null>(null);
+  const [whoisData, setWhoisData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [tried, setTried] = useState(false);
 
@@ -1211,130 +1212,15 @@ const FINAL_CSS = `
 `;
 
 function TechStackFooter() {
-  const TECH_CATEGORIES = [
-    {
-      name: "Frontend & Core",
-      items: [
-        { name: "React", version: "v18.3", category: "UI Library", url: "https://react.dev", color: "group-hover:text-[#61DAFB]" },
-        { name: "TypeScript", version: "v5.4", category: "Type Safety", url: "https://www.typescriptlang.org", color: "group-hover:text-[#3178C6]" },
-        { name: "Node.js", version: "v20 LTS", category: "Runtime", url: "https://nodejs.org", color: "group-hover:text-[#5FA04E]" },
-        { name: "Vite", version: "v5.2", category: "Build Tool", url: "https://vitejs.dev", color: "group-hover:text-[#646CFF]" },
-        { name: "Tailwind CSS", version: "v3.4", category: "Styling Framework", url: "https://tailwindcss.com", color: "group-hover:text-[#06B6D4]" },
-      ]
-    },
-    {
-      name: "Cloud & Monitoring",
-      items: [
-        { name: "Vercel", version: "Serverless", category: "Deployment", url: "https://vercel.com", color: "group-hover:text-white" },
-        { name: "Sentry", version: "SDK v8", category: "Error Tracking", url: "https://sentry.io", color: "group-hover:text-[#362D59]" },
-      ]
-    },
-    {
-      name: "AI & Speech Models",
-      items: [
-        { name: "Gemma", version: "7B / 2B", category: "Google AI", url: "https://ai.google.dev/gemma", color: "group-hover:text-[#4285F4]" },
-        { name: "Ollama", version: "Local LLM", category: "Model Engine", url: "https://ollama.com", color: "group-hover:text-slate-200" },
-        { name: "ElevenLabs", version: "v2 Voice", category: "AI Speech", url: "https://elevenlabs.io", color: "group-hover:text-[#0052FF]" },
-        { name: "Mastra AI", version: "v1.0", category: "Agent Framework", url: "https://mastra.ai", color: "group-hover:text-[#FF3366]" },
-      ]
-    },
-    {
-      name: "Data, Search & APIs",
-      items: [
-        { name: "SerpApi", version: "Google Search", category: "Search API", url: "https://serpapi.com", color: "group-hover:text-[#00B4D8]" },
-        { name: "Backboard.io", version: "Cloud Backend", category: "BaaS & Memory", url: "https://backboard.io", color: "group-hover:text-[#8B5CF6]" },
-        { name: "Wikipedia", version: "REST API", category: "Knowledge Engine", url: "https://www.wikipedia.org", color: "group-hover:text-slate-300" },
-        { name: "Wayback Machine", version: "Internet Archive", category: "Historical Web API", url: "https://archive.org/web/", color: "group-hover:text-[#E2C044]" },
-      ]
-    }
-  ];
-
-  const getIcon = (name: string) => {
-    const map: Record<string, string> = {
-      React: "react", TypeScript: "typescript", "Node.js": "nodedotjs", Vite: "vite",
-      "Tailwind CSS": "tailwindcss", Vercel: "vercel", Sentry: "sentry",
-      Gemma: "gemma", Ollama: "ollama", ElevenLabs: "elevenlabs", "Mastra AI": "mastra",
-      SerpApi: "serpapi", "Backboard.io": "backboard", Wikipedia: "wikipedia",
-      "Wayback Machine": "internetarchive",
-    };
-    return map[name] || name.toLowerCase().replace(/[^a-z]/g, '');
-  };
-
-  const isLobeHub = (name: string) => ["Gemma", "Ollama", "ElevenLabs", "Mastra AI", "SerpApi"].includes(name);
-  const isCustom = (name: string) => ["Backboard.io", "Wayback Machine"].includes(name);
-
   return (
-    <footer className="w-full bg-slate-950 text-slate-300 border-t border-slate-800/80 pt-8 pb-6 px-3 sm:px-4 lg:px-6 font-sans antialiased">
-      <div className="max-w-5xl mx-auto space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/60">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <h3 className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">System Architecture</h3>
-            </div>
-            <p className="text-[9px] text-slate-500 mt-0.5">Engineered with 15 modern open-source & AI platforms.</p>
-          </div>
-          <button
-            onClick={() => { navigator.clipboard.writeText("Built with: " + TECH_CATEGORIES.flatMap(c => c.items.map(i => i.name)).join(', ')); }}
-            className="flex items-center gap-1 px-2 py-1 rounded bg-slate-900 border border-slate-800 hover:border-slate-700 text-[9px] text-slate-400 hover:text-white transition-all"
-          >
-            <span>Copy Stack</span>
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {TECH_CATEGORIES.map((category, catIdx) => (
-            <div key={catIdx} className="space-y-2">
-              <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-slate-400">
-                <span>{category.name}</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {category.items.map((tech) => (
-                  <a
-                    key={tech.name}
-                    href={tech.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900/80 border border-slate-800/80 hover:bg-slate-800/90 hover:border-slate-700 transition-all duration-200"
-                    title={`${tech.name} • ${tech.category} • ${tech.version}`}
-                  >
-                    {isCustom(tech.name) ? (
-                      <svg viewBox="0 0 24 24" width="12" height="12" className="text-slate-400 group-hover:text-slate-200 transition-colors" aria-hidden="true">
-                        {tech.name === 'Backboard.io' ? (
-                          <><rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5"/><path d="M8 8h8v8H8z" fill="none" stroke="currentColor" strokeWidth="1.2"/><path d="M4 8h-2M4 12h-2M4 16h-2M20 8h2M20 12h2M20 16h2" stroke="currentColor" strokeWidth="1.2"/></>
-                        ) : (
-                          <><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="1.5"/><path d="M12 6v6l4 2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></>
-                        )}
-                      </svg>
-                    ) : (
-                      <img
-                        src={isLobeHub(tech.name)
-                          ? `https://unpkg.com/@lobehub/icons-static-svg@latest/icons/${getIcon(tech.name)}.svg`
-                          : `https://cdn.simpleicons.org/${getIcon(tech.name)}/8a7a5a`}
-                        alt=""
-                        width={12}
-                        height={12}
-                        loading="lazy"
-                        className="flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
-                    )}
-                    <span className="text-[9px] font-medium text-slate-300 group-hover:text-white transition-colors whitespace-nowrap">
-                      {tech.name}
-                    </span>
-                  </a>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="pt-4 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between text-[8px] text-slate-500 gap-2">
-          <span>&copy; {new Date().getFullYear()} OSSUARY. All rights reserved.</span>
-          <span className="flex items-center gap-1">
-            hacktoberfest 2026 <span className="text-slate-600">·</span> ghost in the machine
-          </span>
-        </div>
+    <footer className="footer-ossuary">
+      <div>built with React · TypeScript · Node.js · Vite · Vercel · Sentry · Tailwind · Gemma · Ollama · ElevenLabs · SerpApi · Mastra · Backboard · Wikipedia · Wayback</div>
+      <div className="footer-ossuary-links">
+        <a href="https://ossuary.saturumah.net" target="_blank" rel="noopener noreferrer">OSSUARY</a>
+        <span className="dot">·</span>
+        <a href="https://hacktoberfest.com/?utm_source=dev.to&utm_medium=challenge-page&utm_campaign=hacktoberfest-2026&utm_content=week4-home-button" target="_blank" rel="noopener noreferrer">hacktoberfest 2026</a>
+        <span className="dot">·</span>
+        <a href="https://dev.to/challenges/hacktoberfest-week4-2026-10-26" target="_blank" rel="noopener noreferrer">ghost in the machine</a>
       </div>
     </footer>
   );

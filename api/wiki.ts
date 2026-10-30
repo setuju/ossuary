@@ -32,34 +32,35 @@ export default async function handler(req: any, res: any) {
   if (req.query && typeof req.query.title === 'string') rawTitle = req.query.title;
   else { try { rawTitle = new URL(req.url || '/', 'http://localhost').searchParams.get('title') || ''; } catch { rawTitle = ''; } }
   if (!rawTitle) return res.status(400).json({ ok: false, reason: 'missing_title' });
+  
   const cleanDomain = rawTitle.replace(/^www\./, '').trim();
   const prefix = cleanDomain.split('.')[0] || cleanDomain;
   const cap = prefix.charAt(0).toUpperCase() + prefix.slice(1);
   const base = 'https://en.wikipedia.org/w/api.php';
 
-  // ── TIER 1: exact candidates — website/service BEFORE bare name ──
+  // ── TIER 1: DOMAIN FIRST, then service/app variations ──
   let hitTitle: string | null = null;
   const exactCandidates = [
-    cap + ' (service)',
-    cap + ' (website)',
+    cleanDomain,                 // vine.co
+    cap + ' (service)',          // Vine (service)
+    cap + ' (website)',          // Vine (website)
     cap + ' (app)',
     cap + ' (social media)',
     cap + ' (platform)',
     cap + '.com',
     cap,
-    cleanDomain,
   ];
   for (const cand of exactCandidates) {
     const data = await fetchJson(base + '?action=query&titles=' + encodeURIComponent(cand) + '&format=json&redirects=1&prop=pageprops');
     const pages = data?.query?.pages || {};
     const pageObj: any = Object.values(pages)[0];
     if (!pageObj || pageObj.missing || !pageObj.pageid) continue;
-    if (isDisambiguation(pageObj)) continue; // skip disambiguation page
+    if (isDisambiguation(pageObj)) continue;
     hitTitle = pageObj.title;
     break;
   }
 
-  // ── TIER 2: search fallback — filter out disambiguation & non-website ──
+  // ── TIER 2: search fallback ──
   if (!hitTitle) {
     const searchCandidates = [cleanDomain, prefix + ' website', prefix + ' service', prefix + ' app', prefix];
     for (const cand of searchCandidates) {
@@ -72,7 +73,6 @@ export default async function handler(req: any, res: any) {
           t.includes('platform') || t.includes('social') || t.includes('video') ||
           t.includes('company') || t.includes('dot-com') || t.includes('internet');
         if (!isRelevant && t !== prefix.toLowerCase() && t !== cleanDomain.toLowerCase()) continue;
-        // check disambiguation via pageprops
         const check = await fetchJson(base + '?action=query&titles=' + encodeURIComponent(hit.title) + '&format=json&prop=pageprops');
         const pages = check?.query?.pages || {};
         const pageObj: any = Object.values(pages)[0];
