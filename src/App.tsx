@@ -765,22 +765,7 @@ function GhostScreen({
   const lastArchived = footprint?.wayback?.closestTimestamp?.slice(0, 4) || String(result.profile.last_seen_year);
   const hasVisage = footprint?.wayback?.hasSnapshot && iframeSrc;
 
-  
-  const [whoisData, setWhoisData] = useState<any>(null);
-  useEffect(() => {
-    if (!domain) { setWhoisData(null); return; }
-    let active = true;
-    const cleanDomain = domain.replace(/^www\./, '').trim();
-    if (!cleanDomain) return;
-    
-    fetch(`/api/whois?domain=${encodeURIComponent(cleanDomain)}`)
-      .then(r => r.json())
-      .then(d => { if (active && d && d.ok) setWhoisData(d); })
-      .catch(() => {});
-    return () => { active = false; };
-  }, [domain]);
-
-const { fragment, loading: wikiLoading, tried: wikiTried } = useWikiFragment(domain, true);
+  const { fragment, loading: wikiLoading, tried: wikiTried } = useWikiFragment(domain, true);
   const { echoes } = useEchoes(domain, true);
 
   const scrollToRecord = () => {
@@ -1025,14 +1010,6 @@ const { fragment, loading: wikiLoading, tried: wikiTried } = useWikiFragment(dom
                 {footprint?.wayback?.hasSnapshot ? footprint.wayback.closestTimestamp?.slice(0, 4) : 'no tombstone'}
               </span>
             </div>
-            {whoisData && (
-              <div className="whois-panel">
-                <div className="whois-row"><span className="whois-label">registrar</span><span className="whois-value">{whoisData.registrar || '—'}</span></div>
-                <div className="whois-row"><span className="whois-label">created</span><span className="whois-value">{whoisData.create_date ? whoisData.create_date.slice(0, 10) : '—'}</span></div>
-                <div className="whois-row"><span className="whois-label">expires</span><span className="whois-value">{whoisData.expire_date ? whoisData.expire_date.slice(0, 10) : '—'}</span></div>
-              </div>
-            )}
-
             <div className="ledger-row">
               <span className="ledger-k">model</span>
               <span className="ledger-v">{result.models?.narrative || 'unknown'}</span>
@@ -1245,9 +1222,9 @@ function TechStackFooter() {
     { name: 'Tailwind', url: 'https://tailwindcss.com', icon: '🌊' },
     { name: 'Gemma', url: 'https://ai.google.dev/gemma', icon: '💎' },
     { name: 'Ollama', url: 'https://ollama.com', icon: '🦙' },
+    { name: 'Mastra', url: 'https://mastra.ai', icon: 'M' },
     { name: 'ElevenLabs', url: 'https://elevenlabs.io', icon: '11' },
     { name: 'SerpApi', url: 'https://serpapi.com', icon: '🔍' },
-    { name: 'Mastra', url: 'https://mastra.ai', icon: 'M' },
     { name: 'Backboard', url: 'https://backboard.io', icon: 'B' },
     { name: 'Wikipedia', url: 'https://www.wikipedia.org', icon: 'W' },
     { name: 'Wayback', url: 'https://archive.org/web/', icon: '🕒' },
