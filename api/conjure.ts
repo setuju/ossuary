@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { logEvent } from '../lib/tigerdata';
 import { saveGhostRecord, saveGhostAudio } from '../lib/persist';
 import {
   profilerAgent,
@@ -647,6 +648,13 @@ export default async function handler(req: IncomingMessage & { body?: any }, res
       speechResult.audioBase64
         ? saveGhostAudio(saveDomain, speechResult.audioBase64, Date.now())
         : Promise.resolve(false),
+      logEvent({
+        domain: (req.body && req.body.footprint && req.body.footprint.domain) || 'unknown',
+        event_type: 'summon_success',
+        tier_used: profile ? 'ollama' : 'fallback',
+        duration_ms: 0, // Anda bisa mengukur durasi nanti
+        success: true,
+      }),
     ]).catch((e) => console.error('[persist] error:', e));
 
 return sendJson(200, {
