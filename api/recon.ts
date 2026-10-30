@@ -109,7 +109,7 @@ async function fetchWhois(domain: string, timeoutMs = 4000): Promise<{ status: s
 async function fetchWayback(domain: string, timeoutMs = 4000): Promise<{ hasSnapshot: boolean; closestTimestamp?: string }> {
   try {
     const res = await fetch(
-      `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(domain)}&output=json&limit=1&filter=statuscode:200`,
+      `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(domain)}&output=json&limit=-1&filter=statuscode:200`,
       { signal: AbortSignal.timeout(timeoutMs) },
     );
     if (!res.ok) return { hasSnapshot: false };
@@ -219,6 +219,29 @@ async function fetchLastAliveSnapshot(domain: string, timeoutMs = 4000): Promise
 }
 
 // ── MAIN HANDLER ──
+
+// ── Accurate Life/Death Detection ──
+function determineLifeStatus(
+  lastAliveTimestamp: string | undefined,
+  wayback: { hasSnapshot: boolean; closestTimestamp?: string }
+): { status: 'alive' | 'deceased'; reason: string } {
+  // Wikipedia confirmed death → DECEASED
+  if (lastAliveTimestamp) {
+    return { status: 'deceased', reason: 'Wikipedia confirms the service shut down.' };
+  }
+  // No Wayback snapshot → DECEASED
+  if (!wayback.hasSnapshot || !wayback.closestTimestamp) {
+    return { status: 'deceased', reason: 'No archived snapshot found. The ghost has faded.' };
+  }
+  // Check if latest snapshot is recent (< 2 years)
+  const year = parseInt(wayback.closestTimestamp.slice(0, 4), 10);
+  const currentYear = new Date().getFullYear();
+  if (year >= currentYear - 2) {
+    return { status: 'alive', reason: 'Recent archived snapshot found. The ghost is still breathing.' };
+  }
+  return { status: 'deceased', reason: 'Last archived snapshot is from ' + year + '. The ghost has faded.' };
+}
+
 export default async function handler(req: any, res: any) {
   try {
     // ── Rate limit ──
@@ -250,7 +273,17 @@ export default async function handler(req: any, res: any) {
     ]);
 
     // ── Build response ──
-    const footprint: any = {
+        // ── GATE REFUSE-TO-LIE ──
+    const lifeCheck = determineLifeStatus(lastAlive, waybackResult);
+    if (lifeCheck.status === 'alive') {
+      return res.status(422).json({
+        error: 'still_breathing',
+        reason: lifeCheck.reason,
+        domain: rawDomain,
+      });
+    }
+
+const footprint: any = {
       domain: rawDomain,
       target: dnsResult.addresses[0] || rawDomain,
       dns: dnsResult,
