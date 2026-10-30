@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { logEvent } from '../lib/tigerdata';
-import { saveGhostRecord, saveGhostAudio } from '../lib/persist';
+import { logEvent } from '../lib/tigerdata.ts';
+import { saveGhostRecord, saveGhostAudio } from '../lib/persist.ts';
 import {
   profilerAgent,
   fallbackProfilerAgent,

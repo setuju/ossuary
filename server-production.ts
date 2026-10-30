@@ -1,11 +1,11 @@
 // Express wrapper — runs all Vercel API handlers on Render.
 // Deploy: render.yaml in root, start command `tsx server-production.ts`.
 import express from 'express';
-import reconHandler from './api/recon';
-import conjureHandler from './api/conjure';
-import wikiHandler from './api/wiki';
-import whoisHandler from './api/whois';
-import echoesHandler from './api/echoes';
+import reconHandler from './api/recon.ts';
+import conjureHandler from './api/conjure.ts';
+import wikiHandler from './api/wiki.ts';
+import whoisHandler from './api/whois.ts';
+import echoesHandler from './api/echoes.ts';
 
 const app = express();
 
