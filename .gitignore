@@ -6,3 +6,10 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# OSSUARY development backups
+.backup-*
+.last-*-backup
+recon-deep-*.txt
+mongodb-atlas-cli_*.deb
+.vercel/
