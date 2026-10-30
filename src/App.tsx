@@ -1212,42 +1212,65 @@ const FINAL_CSS = `
 
 function TechStackFooter() {
   const stack = [
-    { name: 'React', slug: 'react', cdn: 'simpleicons' },
-    { name: 'TypeScript', slug: 'typescript', cdn: 'simpleicons' },
-    { name: 'Node.js', slug: 'nodedotjs', cdn: 'simpleicons' },
-    { name: 'Vite', slug: 'vite', cdn: 'simpleicons' },
-    { name: 'Vercel', slug: 'vercel', cdn: 'simpleicons' },
-    { name: 'Sentry', slug: 'sentry', cdn: 'simpleicons' },
-    { name: 'Tailwind', slug: 'tailwindcss', cdn: 'simpleicons' },
-    { name: 'Gemma', slug: 'gemma', cdn: 'lobehub' },
-    { name: 'Ollama', slug: 'ollama', cdn: 'lobehub' },
-    { name: 'ElevenLabs', slug: 'elevenlabs', cdn: 'lobehub' },
-    { name: 'SerpApi', slug: 'serpapi', cdn: 'lobehub' },
-    { name: 'Mastra', slug: 'mastra', cdn: 'lobehub' },
-    { name: 'Backboard', slug: 'backboard', cdn: 'custom' },
-    { name: 'Wikipedia', slug: 'wikipedia', cdn: 'simpleicons' },
-    { name: 'Archive', slug: 'internetarchive', cdn: 'simpleicons' },
+    // Core
+    { name: 'React', icon: 'react', color: '#61DAFB' },
+    { name: 'TypeScript', icon: 'typescript', color: '#3178C6' },
+    { name: 'Node.js', icon: 'nodedotjs', color: '#5FA04E' },
+    { name: 'Vite', icon: 'vite', color: '#646CFF' },
+    { name: 'Vercel', icon: 'vercel', color: '#FFFFFF' },
+    { name: 'Sentry', icon: 'sentry', color: '#362D59' },
+    { name: 'Tailwind', icon: 'tailwindcss', color: '#06B6D4' },
+    // AI & Audio
+    { name: 'Gemma', icon: 'gemma', color: '#4285F4', cdn: 'lobehub' },
+    { name: 'Ollama', icon: 'ollama', color: '#E0E0E0', cdn: 'lobehub' },
+    { name: 'ElevenLabs', icon: 'elevenlabs', color: '#FFFFFF', cdn: 'lobehub' },
+    { name: 'SerpApi', icon: 'search', color: '#00B4D8' },
+    { name: 'Mastra', icon: 'mastra', color: '#FF3366', cdn: 'lobehub' },
+    { name: 'Backboard', icon: 'chip', color: '#8B5CF6' },
+    // Data
+    { name: 'Wikipedia', icon: 'wikipedia', color: '#E0E0E0' },
+    { name: 'Wayback', icon: 'clock', color: '#E2C044' },
   ];
-  const iconUrl = (t: typeof stack[number]) => {
-    if (t.cdn === 'lobehub') return `https://unpkg.com/@lobehub/icons-static-svg@latest/icons/${t.slug}.svg`;
-    if (t.cdn === 'simpleicons') return `https://cdn.simpleicons.org/${t.slug}/8a7a5a`;
-    return '';
+
+  const getIcon = (tech: typeof stack[number]) => {
+    if (tech.cdn === 'lobehub') {
+      return `https://unpkg.com/@lobehub/icons-static-svg@latest/icons/${tech.icon}.svg`;
+    }
+    if (tech.icon === 'chip') {
+      return '';
+    }
+    if (tech.icon === 'clock') {
+      return '';
+    }
+    return `https://cdn.simpleicons.org/${tech.icon}/${tech.color.replace('#', '')}`;
   };
+
   return (
     <footer className="tech-stack-footer">
       <div className="tech-stack-label">built with</div>
       <div className="tech-stack-grid">
         {stack.map((t) => (
           <div key={t.name} className="tech-chip" title={t.name}>
-            {t.cdn === 'custom' ? (
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" className="tech-chip-icon">
+            {t.icon === 'chip' ? (
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" className="tech-chip-icon" style={{ color: t.color }}>
                 <rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
                 <path d="M8 8h8v8H8z" fill="none" stroke="currentColor" strokeWidth="1.2" />
                 <path d="M4 8h-2M4 12h-2M4 16h-2M20 8h2M20 12h2M20 16h2M8 4v-2M12 4v-2M16 4v-2M8 20v2M12 20v2M16 20v2" stroke="currentColor" strokeWidth="1.2" />
               </svg>
+            ) : t.icon === 'clock' ? (
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" className="tech-chip-icon" style={{ color: t.color }}>
+                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M12 6v6l4 2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M2 12h2M20 12h2M12 2v2M12 20v2" stroke="currentColor" strokeWidth="1.2" />
+              </svg>
+            ) : t.icon === 'search' ? (
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" className="tech-chip-icon" style={{ color: t.color }}>
+                <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M16 16l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
             ) : (
               <img
-                src={iconUrl(t)}
+                src={getIcon(t)}
                 alt={t.name}
                 width={18}
                 height={18}
