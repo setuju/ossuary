@@ -220,58 +220,62 @@ async function fetchLastAliveSnapshot(domain: string, timeoutMs = 4000): Promise
 
 // ── MAIN HANDLER ──
 export default async function handler(req: any, res: any) {
-  // Rate limit
-  const ip = (req.headers?.['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown';
-  if (!checkRateLimit(ip)) {
-    return res.status(429).json({ error: 'rate_limited' });
+  try {
+    // ── Rate limit ──
+    const ip = (req.headers?.['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 'unknown';
+    if (!checkRateLimit(ip)) {
+      return res.status(429).json({ error: 'rate_limited' });
+    }
+
+    // ── Parse domain ──
+    let domain = '';
+    if (req.body && typeof req.body.domain === 'string') domain = req.body.domain;
+    else if (req.query && typeof req.query.domain === 'string') domain = req.query.domain;
+    else {
+      try { domain = new URL(req.url || '/', 'http://localhost').searchParams.get('domain') || ''; }
+      catch { domain = ''; }
+    }
+    if (!domain) return res.status(400).json({ error: 'missing_domain' });
+
+    const rawDomain = domain.replace(/^www\./, '').trim().toLowerCase();
+    if (!rawDomain) return res.status(400).json({ error: 'empty_domain' });
+
+    // ── Run all lookups in parallel with hard timeouts ──
+    const [dnsResult, pingResult, whoisResult, waybackResult, lastAlive] = await Promise.all([
+      withTimeout(resolveDns(rawDomain), 3500, { resolved: false, addresses: [], error: 'TIMEOUT' }),
+      withTimeout(probePing(rawDomain, 3000), 3200, { alive: false, latencyMs: null, errorCode: 'TIMEOUT' }),
+      withTimeout(fetchWhois(rawDomain, 4000), 4200, { status: 'error', rawSnippet: 'TIMEOUT' }),
+      withTimeout(fetchWayback(rawDomain, 4000), 4200, { hasSnapshot: false }),
+      withTimeout(fetchLastAliveSnapshot(rawDomain, 4500), 4700, undefined),
+    ]);
+
+    // ── Build response ──
+    const footprint: any = {
+      domain: rawDomain,
+      target: dnsResult.addresses[0] || rawDomain,
+      dns: dnsResult,
+      ping: {
+        ...pingResult,
+        diegeticStatus: pingResult.alive ? 'The ghost is listening.' : 'The ghost has gone quiet.',
+      },
+      whois: whoisResult,
+      wayback: waybackResult,
+    };
+
+    if (lastAlive) {
+      footprint.wayback.lastAliveTimestamp = lastAlive;
+      footprint.wayback.closestTimestamp = lastAlive;
+      footprint.wayback.snapshotUrl = `https://web.archive.org/web/${lastAlive}/http://${rawDomain}/`;
+    }
+
+    return res.status(200).json(footprint);
+  } catch (err: any) {
+    // ── GLOBAL CATCH: Always return a response ──
+    console.error('[recon] Unhandled error:', err);
+    return res.status(200).json({
+      domain: req.body?.domain || req.query?.domain || 'unknown',
+      error: 'recon_internal_error',
+      message: err?.message || 'Unknown error',
+    });
   }
-
-  // Parse domain
-  let domain = '';
-  if (req.body && typeof req.body.domain === 'string') domain = req.body.domain;
-  else if (req.query && typeof req.query.domain === 'string') domain = req.query.domain;
-  else {
-    try { domain = new URL(req.url || '/', 'http://localhost').searchParams.get('domain') || ''; }
-    catch { domain = ''; }
-  }
-  if (!domain) return res.status(400).json({ error: 'missing_domain' });
-
-  const rawDomain = domain.replace(/^www\./, '').trim().toLowerCase();
-  if (!rawDomain) return res.status(400).json({ error: 'empty_domain' });
-
-  // Run all lookups in parallel with hard timeouts
-  const [
-    dnsResult,
-    pingResult,
-    whoisResult,
-    waybackResult,
-    lastAlive,
-  ] = await Promise.all([
-    withTimeout(resolveDns(rawDomain), 3500, { resolved: false, addresses: [], error: 'TIMEOUT' }),
-    withTimeout(probePing(rawDomain, 3000), 3200, { alive: false, latencyMs: null, errorCode: 'TIMEOUT' }),
-    withTimeout(fetchWhois(rawDomain, 4000), 4200, { status: 'error', rawSnippet: 'TIMEOUT' }),
-    withTimeout(fetchWayback(rawDomain, 4000), 4200, { hasSnapshot: false }),
-    withTimeout(fetchLastAliveSnapshot(rawDomain, 4500), 4700, undefined),
-  ]);
-
-  // Build response
-  const footprint: any = {
-    domain: rawDomain,
-    target: dnsResult.addresses[0] || rawDomain,
-    dns: dnsResult,
-    ping: {
-      ...pingResult,
-      diegeticStatus: pingResult.alive ? 'The ghost is listening.' : 'The ghost has gone quiet.',
-    },
-    whois: whoisResult,
-    wayback: waybackResult,
-  };
-
-  if (lastAlive) {
-    footprint.wayback.lastAliveTimestamp = lastAlive;
-    footprint.wayback.closestTimestamp = lastAlive;
-    footprint.wayback.snapshotUrl = `https://web.archive.org/web/${lastAlive}/http://${rawDomain}/`;
-  }
-
-  return res.status(200).json(footprint);
 }
