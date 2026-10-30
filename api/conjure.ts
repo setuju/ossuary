@@ -441,7 +441,8 @@ async function generateSpeechAudio(text: string, timeoutMs = 8000): Promise<{ au
   const apiKey = process.env.ELEVENLABS_API_KEY;
   const voiceId = process.env.ELEVENLABS_VOICE_ID || 'vflhOcwDlonnVFj3wJqz';
 
-  if (!apiKey) {
+  // ── GUARD: Zero API calls if key is missing or placeholder ──
+  if (!apiKey || apiKey.trim() === '' || apiKey.startsWith('ELEVENLABS_API_KEY_PLACEHOLDER') || apiKey === 'your_key_here') {
     return { audioBase64: null, errorNotice: DIEGETIC_MESSAGES.GHOST_MUTE };
   }
 

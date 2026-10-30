@@ -251,6 +251,7 @@ export default function App() {
   const [booted, setBooted] = useState(false);
   const [bootLine, setBootLine] = useState(0);
   const [domainInput, setDomainInput] = useState('');
+  const [isSummoning, setIsSummoning] = useState(false);
   const [stage, setStage] = useState<'idle' | 'recon' | 'conjure' | 'summoned' | 'error'>('idle');
   const [streamLines, setStreamLines] = useState<string[]>([]);
   const [footprint, setFootprint] = useState<ReconFootprint | null>(null);
@@ -324,6 +325,8 @@ export default function App() {
     const shouldForce = force || isPreset;
 
     ambient.start();
+    if (isSummoning) return;
+    setIsSummoning(true);
     setStage('recon');
     setErrorMessage(null);
     setFootprint(null);
@@ -385,6 +388,7 @@ export default function App() {
 
       setConjureResult(conjuredData);
       setStage('summoned');
+      setIsSummoning(false);
 
       try {
         const year = String(reconData.wayback.closestTimestamp?.slice(0, 4) || conjuredData.profile.last_seen_year || '????');
@@ -399,6 +403,7 @@ export default function App() {
     } catch (err: any) {
       triggerGlitch();
       setStage('error');
+      setIsSummoning(false);
       setErrorMessage(err?.message || DIEGETIC_MESSAGES.SEANCE_SEVERED);
       pushStream(`! ${err?.message || 'séance severed.'}`);
     }
