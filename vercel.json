@@ -9,6 +9,9 @@
     },
     "api/echoes.ts": {
       "maxDuration": 15
+    },
+    "api/wiki.ts": {
+      "maxDuration": 10
     }
   }
 }

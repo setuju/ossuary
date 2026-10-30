@@ -169,110 +169,30 @@ function useWikiFragment(domain: string, enabled: boolean) {
     setLoading(true);
 
     const cleanDomain = domain.replace(/^www\./, '');
-    const prefix = cleanDomain.split('.')[0] || cleanDomain;
-
-    const base = 'https://en.wikipedia.org/w/api.php';
-    const fetchJson = async (url: string) => {
-      // User-Agent is a forbidden header in browser fetch — setting it triggers
-      // a CORS preflight that Wikipedia's API doesn't whitelist for our origin.
-      // The `origin=*` query param handles CORS for simple GET requests.
-      const res = await fetch(url);
-      if (!res.ok) return null;
-      return res.json();
-    };
 
     (async () => {
       try {
-        let hitTitle: string | null = null;
+        const res = await fetch('/api/wiki?title=' + encodeURIComponent(cleanDomain));
+        if (!res.ok) { setTried(true); return; }
+        const data = await res.json();
+        if (!data || !data.ok || !data.extract) { setTried(true); return; }
 
-        // TIER 1: Exact title lookup (handles Pets.com, GeoCities, Friendster, etc.)
-        const exactCandidates = [
-          `${prefix.charAt(0).toUpperCase()}${prefix.slice(1)}.com`,
-          `${prefix.charAt(0).toUpperCase()}${prefix.slice(1)}`,
-          cleanDomain,
-          `${prefix.charAt(0).toUpperCase()}${prefix.slice(1)} (website)`,
-          `${prefix.charAt(0).toUpperCase()}${prefix.slice(1)} (service)`,
-        ];
-        for (const title of exactCandidates) {
-          const data = await fetchJson(
-            `${base}?action=query&titles=${encodeURIComponent(title)}&format=json&origin=*`
-          );
-          const pages = data?.query?.pages || {};
-          const pageObj: any = Object.values(pages)[0];
-          if (pageObj && !pageObj.missing && pageObj.pageid) {
-            hitTitle = pageObj.title;
-            break;
-          }
-        }
-
-        // TIER 2: Search fallback
-        if (!hitTitle) {
-          const searchCandidates = [cleanDomain, `${prefix} website`, prefix];
-          for (const candidate of searchCandidates) {
-            const data = await fetchJson(
-              `${base}?action=query&list=search&srsearch=${encodeURIComponent(candidate)}&format=json&origin=*&srlimit=10`
-            );
-            const hits = data?.query?.search || [];
-            if (hits.length > 0) {
-              const best = hits.find(
-                (h: any) =>
-                  h.title.toLowerCase() === prefix.toLowerCase() ||
-                  h.title.toLowerCase() === cleanDomain.toLowerCase() ||
-                  h.title.toLowerCase().includes(prefix.toLowerCase())
-              ) || hits[0];
-              hitTitle = best.title;
-              break;
-            }
-          }
-        }
-
-        if (!hitTitle) {
-          setTried(true);
-          setLoading(false);
-          return;
-        }
-
-        // TIER 3: Fetch full extract via Action API (not REST)
-        const extractData = await fetchJson(
-          `${base}?action=query&prop=extracts|pageimages&explaintext=1&exintro=1&titles=${encodeURIComponent(
-            hitTitle
-          )}&pithumbsize=600&format=json&origin=*`
-        );
-        const pages = extractData?.query?.pages || {};
-        const pageObj: any = Object.values(pages)[0];
-        if (!pageObj || pageObj.missing) {
-          setTried(true);
-          setLoading(false);
-          return;
-        }
-
-        const rawText = pageObj.extract || '';
+        const rawText: string = data.extract;
         const parsedParagraphs = parseWikiExtract(rawText);
         const derivedEra = extractWikiEra(rawText);
-
-        if (!rawText || parsedParagraphs.length === 0) {
-          setTried(true);
-          setLoading(false);
-          return;
-        }
+        if (!rawText || parsedParagraphs.length === 0) { setTried(true); return; }
 
         setFragment({
-          title: pageObj.title || hitTitle,
-          description: 'Defunct Internet Service & Historical Archive',
+          title: data.title || cleanDomain,
+          description: data.description || 'Defunct Internet Service & Historical Archive',
           extract: rawText,
           paragraphs: parsedParagraphs,
-          url: `https://en.wikipedia.org/wiki/${encodeURIComponent(
-            (pageObj.title || hitTitle).replace(/ /g, '_')
-          )}`,
-          thumbnail: pageObj.thumbnail?.source,
+          url: data.url || ('https://en.wikipedia.org/wiki/' + encodeURIComponent(cleanDomain)),
+          thumbnail: data.thumbnail,
           era: derivedEra,
         });
-      } catch {
-        /* silent */
-      } finally {
-        setLoading(false);
-        setTried(true);
-      }
+      } catch { /* silent */ }
+      finally { setLoading(false); setTried(true); }
     })();
   }, [domain, enabled]);
 
