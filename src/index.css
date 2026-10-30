@@ -14,6 +14,8 @@
   --amber-dim: rgba(201, 162, 92, 0.35);
 
   --serif: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
   --sans: 'Inter', -apple-system, sans-serif;
   --mono: 'JetBrains Mono', 'Courier New', monospace;
 }

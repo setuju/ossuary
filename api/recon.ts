@@ -117,22 +117,54 @@ async function probeHost(host: string, port = 80, timeoutMs = 3500): Promise<{ a
 
 async function fetchLastAliveSnapshot(domain: string, timeoutMs = 5000): Promise<string | undefined> {
   try {
-    const searchRes = await fetch(
-      `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(domain)}&format=json&srlimit=1`,
-      { signal: AbortSignal.timeout(timeoutMs), headers: { 'User-Agent': 'OssuaryRecon/1.0' } }
-    );
-    if (!searchRes.ok) return undefined;
-    const searchData = await searchRes.json();
-    const hit = searchData?.query?.search?.[0];
-    if (!hit) return undefined;
+    const cleanDomain = domain.replace(/^www\./, '').trim();
+    const prefix = cleanDomain.split('.')[0] || cleanDomain;
+    const cap = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+    const base = 'https://en.wikipedia.org/w/api.php';
+    const headers = { 'User-Agent': 'OssuaryRecon/1.0' };
+    const fetchJson = async (url: string): Promise<any | null> => {
+      try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs), headers });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch { return null; }
+    };
 
-    const summaryRes = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(hit.title.replace(/ /g, '_'))}`,
-      { signal: AbortSignal.timeout(timeoutMs), headers: { 'User-Agent': 'OssuaryRecon/1.0' } }
-    );
-    if (!summaryRes.ok) return undefined;
-    const summary = await summaryRes.json();
-    const extract = summary?.extract || '';
+    let hitTitle: string | null = null;
+    const exactCandidates = [
+      cap + ' (service)', cap + ' (website)', cap + ' (app)',
+      cap + ' (social media)', cap + ' (platform)',
+      cap + '.com', cap, cleanDomain,
+    ];
+    for (const cand of exactCandidates) {
+      const data = await fetchJson(base + '?action=query&titles=' + encodeURIComponent(cand) + '&format=json&redirects=1');
+      const pages = data?.query?.pages || {};
+      const pageObj: any = Object.values(pages)[0];
+      if (pageObj && !pageObj.missing && pageObj.pageid) { hitTitle = pageObj.title; break; }
+    }
+
+    if (!hitTitle) {
+      const searchCandidates = [cleanDomain, prefix + ' website', prefix + ' service', prefix + ' app', prefix];
+      for (const cand of searchCandidates) {
+        const data = await fetchJson(base + '?action=query&list=search&srsearch=' + encodeURIComponent(cand) + '&format=json&srlimit=10');
+        const hits = data?.query?.search || [];
+        for (const hit of hits) {
+          const t = String(hit.title || '').toLowerCase();
+          const isRelevant = t.includes('website') || t.includes('service') || t.includes('app') || t.includes('platform') || t.includes('social') || t.includes('video') || t.includes('company') || t.includes('dot-com') || t.includes('internet');
+          if (isRelevant || t === prefix.toLowerCase() || t === cleanDomain.toLowerCase()) { hitTitle = hit.title; break; }
+        }
+        if (hitTitle) break;
+      }
+    }
+
+    if (!hitTitle) return undefined;
+
+    const extractData = await fetchJson(base + '?action=query&prop=extracts|pageimages&explaintext=1&exintro=1&titles=' + encodeURIComponent(hitTitle) + '&pithumbsize=600&format=json&redirects=1');
+    const pages = extractData?.query?.pages || {};
+    const pageObj: any = Object.values(pages)[0];
+    if (!pageObj || pageObj.missing) return undefined;
+    const extract: string = pageObj.extract || '';
+    if (!extract) return undefined;
 
     const patterns = [
       /(?:closed|shut down|ceased|discontinued|went offline|terminated|ended|defunct)[\s\S]{0,60}?\b(19\d\d|20\d\d)\b/i,
@@ -150,8 +182,8 @@ async function fetchLastAliveSnapshot(domain: string, timeoutMs = 5000): Promise
     if (!deathYear) return undefined;
 
     const cdxRes = await fetch(
-      `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(domain)}&output=json&to=${deathYear}1231&filter=statuscode:200&limit=-1`,
-      { signal: AbortSignal.timeout(timeoutMs), headers: { 'User-Agent': 'OssuaryRecon/1.0' } }
+      'https://web.archive.org/cdx/search/cdx?url=' + encodeURIComponent(domain) + '&output=json&to=' + deathYear + '1231&filter=statuscode:200&limit=-1',
+      { signal: AbortSignal.timeout(timeoutMs), headers }
     );
     if (!cdxRes.ok) return undefined;
     const cdxData = await cdxRes.json();

@@ -1078,37 +1078,192 @@ function GhostFooter() {
   );
 }
 
+/* ─── ossuary final css ─── */
+const FINAL_CSS = `
+.tech-stack-footer {
+  margin: 2.5rem auto 1.5rem;
+  max-width: 720px;
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid rgba(138,122,90,0.25);
+}
+.tech-stack-label {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(200,180,140,0.55);
+  margin-bottom: 0.9rem;
+}
+.tech-stack-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+.tech-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.6rem;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(138,122,90,0.18);
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: rgba(220,205,175,0.85);
+  transition: border-color 0.2s, background 0.2s;
+}
+.tech-chip:hover { border-color: rgba(200,180,140,0.45); background: rgba(255,255,255,0.04); }
+.tech-chip-icon { flex-shrink: 0; opacity: 0.85; color: rgba(200,180,140,0.85); }
+.tech-chip-name { white-space: nowrap; }
+.tech-stack-footer-meta {
+  margin-top: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: rgba(180,165,135,0.4);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.tech-stack-dot { margin: 0 0.4rem; }
+/* better ledger panel */
+.ledger-panel {
+  margin: 1.25rem auto;
+  max-width: 720px;
+  padding: 1rem 1.25rem;
+  background: rgba(0,0,0,0.18);
+  border: 1px solid rgba(138,122,90,0.15);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: rgba(220,205,175,0.8);
+}
+.ledger-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  border-bottom: 1px dashed rgba(138,122,90,0.12);
+}
+.ledger-row:last-child { border-bottom: none; }
+.ledger-key { color: rgba(180,165,135,0.6); }
+.ledger-val { color: rgba(220,205,175,0.9); }
+.ledger-status-ok { color: #7fbf7f; }
+.ledger-status-warn { color: #d4a04a; }
+.ledger-status-err { color: #c96a5a; }
+.lost-voice-note {
+  margin-top: 0.85rem;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: rgba(200,180,140,0.6);
+  font-style: italic;
+}
+/* gantt */
+.gantt-wrap { margin: 1.25rem auto; max-width: 720px; }
+.gantt-row { display: flex; align-items: center; margin-bottom: 0.4rem; }
+.gantt-label {
+  flex: 0 0 120px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: rgba(180,165,135,0.65);
+  text-align: right;
+  padding-right: 0.75rem;
+}
+.gantt-track {
+  flex: 1;
+  position: relative;
+  height: 14px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.gantt-bar {
+  position: absolute;
+  top: 2px;
+  height: 10px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(200,180,140,0.7), rgba(138,122,90,0.45));
+}
+.gantt-tick {
+  position: absolute;
+  top: -2px;
+  width: 1px;
+  height: 18px;
+  background: rgba(200,180,140,0.3);
+}
+.gantt-year {
+  position: absolute;
+  top: 16px;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: rgba(180,165,135,0.4);
+  transform: translateX(-50%);
+}
+.gantt-legend {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: rgba(180,165,135,0.55);
+}
+.gantt-legend span::before {
+  content: '■ ';
+  color: rgba(200,180,140,0.7);
+}
+`;
+
 function TechStackFooter() {
-  const techs = [
-    { name: 'React', logo: 'react', url: 'https://react.dev' },
-    { name: 'TypeScript', logo: 'typescript', url: 'https://www.typescriptlang.org' },
-    { name: 'Node.js', logo: 'nodedotjs', url: 'https://nodejs.org' },
-    { name: 'Vite', logo: 'vite', url: 'https://vitejs.dev' },
-    { name: 'Vercel', logo: 'vercel', url: 'https://vercel.com' },
-    { name: 'Sentry', logo: 'sentry', url: 'https://sentry.io' },
-    { name: 'Tailwind', logo: 'tailwindcss', url: 'https://tailwindcss.com' },
-    { name: 'Gemma', logo: 'google', url: 'https://ai.google.dev/gemma', fallback: 'Gemma' },
-    { name: 'Ollama', logo: 'ollama', url: 'https://ollama.com', fallback: 'Ollama' },
-    { name: 'ElevenLabs', logo: 'elevenlabs', url: 'https://elevenlabs.io', fallback: 'ElevenLabs' },
-    { name: 'SerpApi', logo: 'serpapi', url: 'https://serpapi.com', fallback: 'SerpApi' },
-    { name: 'Mastra', logo: 'mastra', url: 'https://mastra.ai', fallback: 'Mastra' },
-    { name: 'Backboard', logo: 'backboard', url: 'https://backboard.io', fallback: 'Backboard' },
-    { name: 'Wikipedia', logo: 'wikipedia', url: 'https://wikipedia.org' },
-    { name: 'Internet Archive', logo: 'internetarchive', url: 'https://archive.org', fallback: 'Archive' },
+  const stack = [
+    { name: 'React', slug: 'react', cdn: 'simpleicons' },
+    { name: 'TypeScript', slug: 'typescript', cdn: 'simpleicons' },
+    { name: 'Node.js', slug: 'nodedotjs', cdn: 'simpleicons' },
+    { name: 'Vite', slug: 'vite', cdn: 'simpleicons' },
+    { name: 'Vercel', slug: 'vercel', cdn: 'simpleicons' },
+    { name: 'Sentry', slug: 'sentry', cdn: 'simpleicons' },
+    { name: 'Tailwind', slug: 'tailwindcss', cdn: 'simpleicons' },
+    { name: 'Gemma', slug: 'gemma', cdn: 'lobehub' },
+    { name: 'Ollama', slug: 'ollama', cdn: 'lobehub' },
+    { name: 'ElevenLabs', slug: 'elevenlabs', cdn: 'lobehub' },
+    { name: 'SerpApi', slug: 'serpapi', cdn: 'lobehub' },
+    { name: 'Mastra', slug: 'mastra', cdn: 'lobehub' },
+    { name: 'Backboard', slug: 'backboard', cdn: 'custom' },
+    { name: 'Wikipedia', slug: 'wikipedia', cdn: 'simpleicons' },
+    { name: 'Archive', slug: 'internetarchive', cdn: 'simpleicons' },
   ];
+  const iconUrl = (t: typeof stack[number]) => {
+    if (t.cdn === 'lobehub') return `https://unpkg.com/@lobehub/icons-static-svg@latest/icons/${t.slug}.svg`;
+    if (t.cdn === 'simpleicons') return `https://cdn.simpleicons.org/${t.slug}/8a7a5a`;
+    return '';
+  };
   return (
     <footer className="tech-stack-footer">
-      <span className="tech-stack-label">built with</span>
+      <div className="tech-stack-label">built with</div>
       <div className="tech-stack-grid">
-        {techs.map(t => (
-          <a key={t.name} href={t.url} target="_blank" rel="noreferrer" className="tech-badge" title={t.name}>
-            {t.fallback ? (
-              <span className="tech-text">{t.fallback}</span>
+        {stack.map((t) => (
+          <div key={t.name} className="tech-chip" title={t.name}>
+            {t.cdn === 'custom' ? (
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" className="tech-chip-icon">
+                <rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M8 8h8v8H8z" fill="none" stroke="currentColor" strokeWidth="1.2" />
+                <path d="M4 8h-2M4 12h-2M4 16h-2M20 8h2M20 12h2M20 16h2M8 4v-2M12 4v-2M16 4v-2M8 20v2M12 20v2M16 20v2" stroke="currentColor" strokeWidth="1.2" />
+              </svg>
             ) : (
-              <img src={`https://cdn.simpleicons.org/${t.logo}/c9a25c`} alt={t.name} className="tech-icon" loading="lazy" />
+              <img
+                src={iconUrl(t)}
+                alt={t.name}
+                width={18}
+                height={18}
+                loading="lazy"
+                className="tech-chip-icon"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
             )}
-          </a>
+            <span className="tech-chip-name">{t.name}</span>
+          </div>
         ))}
+      </div>
+      <div className="tech-stack-footer-meta">
+        <span>hacktoberfest 2026</span>
+        <span className="tech-stack-dot">·</span>
+        <span>ghost in the machine</span>
       </div>
     </footer>
   );

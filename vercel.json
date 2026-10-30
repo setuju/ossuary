@@ -12,6 +12,9 @@
     },
     "api/wiki.ts": {
       "maxDuration": 10
+    },
+    "api/whois.ts": {
+      "maxDuration": 15
     }
   }
 }
