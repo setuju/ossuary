@@ -506,4 +506,3 @@ MIT — see [LICENSE](./LICENSE).
 <sub>Made with sorrow, caffeine, and a refusal to lie.</sub>
 
 </div>
-
