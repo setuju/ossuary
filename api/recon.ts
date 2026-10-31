@@ -249,7 +249,7 @@ function determineLifeStatus(
 
 // ── Failsafe: Known dead domains (bypass Wikipedia timeout) ──
 const KNOWN_DEAD_DOMAINS: Record<string, number> = {
-  'vine.co': 2017, 'geocities.com': 2009, 'friendster.com': 2015,
+  'vine.co': 2017, 'geocities.com': 2009, 'friendster.com': 2015, 'myspace.com': 2011,
   'pets.com': 2000, 'clubpenguin.com': 2017, 'megaupload.com': 2012,
   'grooveshark.com': 2015, 'sixdegrees.com': 2001, 'boo.com': 2000,
 };
