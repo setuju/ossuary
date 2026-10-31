@@ -82,7 +82,7 @@ Tier 1: Ollama (gemma4:31b-cloud)     ─┐
 Tier 2: Ollama (gemma4:cloud)          │
 Tier 3: Google GenAI (gemma-4-31b-it)  ├─ 20s timeout each
 Tier 4: OpenRouter (gemma-4-31b-it)    │
-Tier 5: Deterministic fallback         ─┘
+Tier 5: Deterministic fallback        ─┘
 ```
 
 Each tier is wrapped in `Sentry.startSpan()` for telemetry. If a tier fails, its `durationMs` and error code are logged in `notices[]`.
@@ -246,4 +246,4 @@ SELECT create_hypertable('ghost_events', 'event_time');
 
 ---
 
-*For questions, open an issue or email maintainer@ossuary.saturumah.net.*
+*For questions, open an issue or email jack@saturumah.net.*
