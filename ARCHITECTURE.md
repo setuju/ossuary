@@ -16,8 +16,242 @@
 
 This document dives deeper into how OSSUARY is built, layer by layer.
 
+```text
+ossuary/
+│
+├── 📄 API LAYER (Serverless handlers — Render backend)
+│   ├── api/
+│   │   ├── recon.ts              # DNS + WHOIS + Wayback + Wikipedia — reconnaissance
+│   │   │                         # Gate Refuse-to-Lie: return 422 for living domains
+│   │   │                         # Failsafe: KNOWN_DEAD_DOMAINS for Wikipedia-timeout cases
+│   │   │
+│   │   ├── conjure.ts            # 5-tier LLM cascade (Gemma → GenAI → OpenRouter → fallback)
+│   │   │                         # + ElevenLabs TTS + MongoDB persist + TigerData log
+│   │   │                         # Orchestrated by Mastra agents
+│   │   │
+│   │   ├── echoes.ts             # SerpApi search echoes — grounds the ghost in reality
+│   │   │                         # Returns top 3 Google results for the domain
+│   │   │
+│   │   ├── whois.ts              # 3-layer WHOIS fallback: IP2WHOIS → RDAP → WhoisXMLAPI
+│   │   │                         # Returns registrar, created/expires dates
+│   │   │
+│   │   └── wiki.ts               # Wikipedia proxy (bypasses browser CORS)
+│   │                             # Filters disambiguation pages ("Vine" ≠ plant)
+│
+├── 📚 LIB LAYER (Shared utilities — persistence & analytics)
+│   ├── lib/
+│   │   ├── mongodb.ts            # MongoDB Atlas client (serverless-safe caching)
+│   │   │                         # maxPoolSize: 5 to avoid connection exhaustion
+│   │   │
+│   │   ├── persist.ts            # saveGhostRecord() → ghost_profiles collection
+│   │   │                         # saveGhostAudio() → GridFS bucket (255KB chunks)
+│   │   │                         # Non-blocking: Promise.allSettled — narrative always returns
+│   │   │
+│   │   └── tigerdata.ts          # TigerData (TimescaleDB) hypertable client
+│   │                             # logEvent() writes summon events to ghost_events
+│   │                             # SSL: rejectUnauthorized=false (self-signed cert bypass)
+│
+├── 🎨 FRONTEND (React SPA — Vercel)
+│   ├── src/
+│   │   ├── App.tsx               # Main component (~1300 lines)
+│   │   │                         # State machine: idle → recon → conjure → summoned
+│   │   │                         # Contains: IdleAltar, GhostScreen, TimelineOfDecay,
+│   │   │                         # WikiMemorial, TechStackFooter, ErrorScreen
+│   │   │
+│   │   ├── main.tsx              # React 19 entry point + Sentry SDK initialization
+│   │   │                         # Mounts App to #root, sets up ErrorBoundary
+│   │   │
+│   │   ├── index.css             # All styles (~2100 lines)
+│   │   │                         # WCAG AA overrides at bottom, ASCII footer CSS,
+│   │   │                         # typewriter animations, glitch effects, theme toggle
+│   │   │
+│   │   ├── agent/
+│   │   │   └── index.ts          # Mastra agent definitions
+│   │   │                         # profilerAgent (Gemma 4 via Ollama)
+│   │   │                         # voiceAgent, fallbackProfilerAgent, openrouterVoiceAgent
+│   │   │
+│   │   ├── sentry/
+│   │   │   └── diegetic.ts       # Diegetic telemetry — errors as narrative messages
+│   │   │                         # DIEGETIC_MESSAGES map + logParanormalTelemetry()
+│   │   │                         # Tagged kind:paranormal for every subsystem failure
+│   │   │
+│   │   ├── utils/
+│   │   │   ├── wikiParser.ts     # Parse Wikipedia extracts into ghost narrative material
+│   │   │   │                     # Strips citation markers, splits paragraphs
+│   │   │   │
+│   │   │   └── wikiParser.test.ts # Unit tests for wikiParser paragraph extraction
+│   │   │
+│   │   └── vite-env.d.ts         # Vite type definitions (auto-generated)
+│   │                             # Declares import.meta.env.VITE_* types
+│
+├── ⚙️ CONFIG & ENTRY POINTS
+│   ├── index.html                # SPA entry point + SEO meta
+│   │                             # OpenGraph + Twitter cards + Schema.org WebApplication
+│   │                             # Inline SVG favicon
+│   │
+│   ├── server.ts                 # Local dev server (Express + Vite middleware, port 3000)
+│   │                             # Only used for `bun run dev`, not production
+│   │
+│   ├── server-production.ts      # Production Express wrapper (Render)
+│   │                             # Wraps Vercel-style handlers → single Express app
+│   │                             # CORS: allowlist for ossuary.saturumah.net
+│   │                             # Access-Control-Allow-Headers: includes baggage, sentry-trace
+│   │
+│   ├── vite.config.ts            # Vite 8 build config for React + Tailwind v4
+│   │                             # Uses @vitejs/plugin-react + @tailwindcss/vite
+│   │
+│   ├── tsconfig.json             # TypeScript config (strict mode, ESM, allowImportingTsExtensions)
+│   │                             # Path aliases: none (relative imports only)
+│   │
+│   ├── package.json              # Dependencies, scripts (dev, build, start)
+│   │                             # 21 tech dependencies — all documented in README
+│   │
+│   ├── render.yaml               # Render deployment blueprint
+│   │                             # Express service, Singapore region, env vars, /health check
+│   │
+│   ├── vercel.json               # Vercel function config (maxDuration per API route)
+│   │                             # Note: production backend on Render, not Vercel functions
+│   │
+│   └── bun.lock                  # Bun lockfile (equivalent to package-lock.json)
+│
+└── 📖 DOCUMENTATION
+    ├── README.md                 # Main project docs (476 lines)
+    │                             # Hero badges, ASCII footer, tech lore, quick start
+    │
+    ├── ARCHITECTURE.md           # Deep dive into each layer (235 lines)
+    │                             # Layer-by-layer explanation, data models, deployment topology
+    │
+    ├── CHANGELOG.md              # SemVer history from v0.1.0 to v0.9.0
+    │                             # Following Keep a Changelog format
+    │
+    ├── CONTRIBUTING.md           # Contributor guide (96 lines)
+    │                             # "Add a dead domain" guide, style guide, PR process
+    │
+    ├── CODE_OF_CONDUCT.md        # Contributor Covenant 2.1
+    │                             # Includes special note about respecting deceased people's domains
+    │
+    ├── SECURITY.md               # Vulnerability reporting + security best practices
+    │                             # 48-hour response SLA, in-scope vs out-of-scope
+    │
+    └── LICENSE                   # MIT License + dedication ("The dead belong to everyone")
+```
+
 ## High-Level Flow
 
+```text
+╔══════════════════════════════════════════════════════════════════════════╗
+║                                                                          ║
+║    ██████╗ ███████╗███████╗██╗   ██╗ █████╗ ██████╗ ██╗   ██╗            ║
+║   ██╔═══██╗██╔════╝██╔════╝██║   ██║██╔══██╗██╔══██╗╚██╗ ██╔╝            ║
+║   ██║   ██║███████╗███████╗██║   ██║███████║██████╔╝ ╚████╔╝             ║
+║   ██║   ██║╚════██║╚════██║██║   ██║██╔══██║██╔══██╗  ╚██╔╝              ║
+║   ╚██████╔╝███████║███████║╚██████╔╝██║  ██║██║  ██║   ██║               ║
+║    ╚═════╝ ╚══════╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝               ║
+║                                                                          ║
+║                     ── THE LAST PACKET ──                                ║
+║                                                                          ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+                        ▲
+                        │  https://ossuary.saturumah.net
+                        │
+┌───────────────────────┴──────────────────────────────────────────────────┐
+│                                                                          │
+│                    VERCEL · THE ALTAR (Frontend)                         │
+│                    ─────────────────────────────                         │
+│                                                                          │
+│  ┌────────────┐   ┌──────────────┐   ┌─────────────┐   ┌─────────────┐   │
+│  │  React 19  │→→→|  TypeScript  │→→→│  Vite 8     │→→→│ Tailwind v4 │   │
+│  └────────────┘   └──────────────┘   └─────────────┘   └─────────────┘   │
+│                                                                          │
+│  [ Idle Altar ]  →  [ Boot Screen ]  →  [ Ghost Screen ]  →  [ Ledger ]  │
+│         │                   │                  │                │        │
+│         └───────────────────┴──────────────────┴────────────────┘        │
+│                                                                          │
+└───────────────────────────────┬──────────────────────────────────────────┘
+                                │
+                                │  fetch( VITE_API_URL + '/api/*' )
+                                │
+┌───────────────────────────────▼──────────────────────────────────────────┐
+│                                                                          │
+│                    RENDER · THE NECROPOLIS (Backend)                     │
+│                    ─────────────────────────────────                     │
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │            server-production.ts  (Express + tsx)                   │  │
+│  └────────────────────────────────────────────────────────────────────┘  │
+│                                                                          │
+│   ┌───────────┐    ┌───────────┐    ┌───────────┐    ┌───────────┐       │
+│   │  /recon   │    │ /conjure  │    │   /wiki   │    │  /echoes  │       │
+│   └─────┬─────┘    └─────┬─────┘    └─────┬─────┘    └─────┬─────┘       │
+│         │                │                │                │             │
+└─────────┼────────────────┼────────────────┼────────────────┼─────────────┘
+          │                │                │                │
+          │         ┌──────▼──────┐         │                │
+          │         │  REFUSE-    │         │                │
+          │         │  TO-LIE     │         │                │
+          │         │  GATE       │         │                │
+          │         │  ─────────  │         │                │
+          │         │  HTTP 422   │         │                │
+          │         │  still_     │         │                │
+          │         │  breathing  │         │                │
+          │         └──────┬──────┘         │                │
+          │                │                │                │
+          ▼                ▼                ▼                ▼
+   ┌────────────┐   ┌────────────┐   ┌────────────┐   ┌────────────┐
+   │  PARALLEL  │   │ 5-TIER LLM │   │ WIKIPEDIA  │   │  SERPAPI   │
+   │  FETCH     │   │  CASCADE   │   │   PROXY    │   │  ECHOES    │
+   └─────┬──────┘   └─────┬──────┘   └─────┬──────┘   └─────┬──────┘
+         │                │                │                │
+    ┌────┴────┐      ┌────┴────┐      ┌────┴────┐      ┌────┴────┐
+    ▼    ▼    ▼      ▼    ▼    ▼      ▼    ▼    ▼      ▼    ▼    ▼
+  ┌──┐ ┌──┐ ┌──┐    ┌──┐ ┌──┐ ┌──┐   ┌──┐ ┌──┐ ┌──┐   ┌──┐ ┌──┐ ┌──┐
+  │DN│ │WH│ │WB│    │Ge│ │Ge│ │OR│   │Wi│ │Di│ │Ex│   │S1│ │S2│ │S3│
+  │S │ │O │ │M │    │mm│ │nA│ │  │   │ki│ │sa│ │tr│   │  │ │  │ │  │
+  └──┘ └──┘ └──┘    └──┘ └──┘ └──┘   └──┘ └──┘ └──┘   └──┘ └──┘ └──┘
+   ▲     ▲    ▲      ▲    ▲    ▲
+   │     │    │      │    │    │
+   │     │    │      │    │    └──── OpenRouter (free tier)
+   │     │    │      │    └───────── Google GenAI
+   │     │    │      └────────────── Ollama · Gemma 4 31B (primary)
+   │     │    └───────────────────── Wayback CDX API
+   │     └────────────────────────── WHOIS (IP2WHOIS → RDAP → XML)
+   └─────────────────────────────── DNS (A/AAAA record)
+
+                    ┌─────────────────────────┐
+                    │   THE SPIRIT PERSISTS   │
+                    └────────────┬────────────┘
+                                 │
+        ┌────────────────────────┼────────────────────────┐
+        │                        │                        │
+        ▼                        ▼                        ▼
+  ┌───────────┐            ┌───────────┐            ┌───────────┐
+  │  MONGODB  │            │ TIGERDATA │            │ BACKBOARD │
+  │  ───────  │            │  ───────  │            │  ───────  │
+  │  ghost_   │            │  ghost_   │            │  semantic │
+  │  profiles │            │  events   │            │  memory   │
+  │  (GridFS  │            │  (hyper-  │            │  (recall  │
+  │   audio)  │            │   table)  │            │   across  │
+  │           │            │           │            │   summons │
+  └───────────┘            └───────────┘            └───────────┘
+
+        ┌──────────────────────────────────────────────────┐
+        │              SENTRY · DIEGETIC LEDGER            │
+        │  ─────────────────────────────────────────────   │
+        │  kind:paranormal · system:gate · STILL_BREATHING │
+        │  BACKBOARD_FADED · ELEVEN_QUOTA · GENAI_TIMEOUT  │
+        └──────────────────────────────────────────────────┘
+
+                  ┌────────────────────────────┐
+                  │    ELEVENLABS · THE VOICE  │
+                  │    ──────────────────────  │
+                  │    Adam · flash_v2 model   │
+                  │    truncated ≤ 500 chars   │
+                  │    audio archived → GridFS │
+                  └────────────────────────────┘
+```
+
+Simply like this :
 ```
 User Input → Recon → Gate Check → Conjure (LLM) → TTS → Persist → Display
 ```
