@@ -1,3 +1,17 @@
+<!--
+┌──────────────────────────────────────────────────────────────────────┐
+│  ⌂  SATURUMAH.NET · FILE CONTRACT                                    │
+│  ──────────────────────────────────────────────────────────────────  │
+│  File      : ARCHITECTURE.md                                         │
+│  Purpose   : Deep dive into each layer of the stack                  │
+│  Author    : Jack — Jack[at]SatuRumah[dot]Net                        │
+│  GitHub    : https://github.com/setuju                               │
+│  Website   : https://saturumah.net                                   │
+│  Created   : 2026-10-26                                              │
+│  License   : MIT                                                     │
+└──────────────────────────────────────────────────────────────────────┘
+-->
+
 # Architecture
 
 This document dives deeper into how OSSUARY is built, layer by layer.

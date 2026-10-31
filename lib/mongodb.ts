@@ -1,3 +1,22 @@
+/**
+ * ┌───────────────────────────────────────────────────────────────────────────┐
+ * │  ⌂  SATURUMAH.NET · FILE CONTRACT                                         │
+ * │  ───────────────────────────────────────────────────────────────────────  │
+ * │  File      : lib/mongodb.ts                                               │
+ * │  Purpose   : MongoDB Atlas client with serverless-safe connection caching │
+ * │  Author    : Jack — Jack[at]SatuRumah[dot]Net                             │
+ * │  GitHub    : https://github.com/setuju                                    │
+ * │  Website   : https://saturumah.net                                        │
+ * │  Created   : 2026-10-26                                                   │
+ * │  License   : MIT                                                          │
+ * └───────────────────────────────────────────────────────────────────────────┘
+ *
+ * @author    Jack <Jack[at]SatuRumah[dot]Net>
+ * @created   2026-10-26
+ * @package   ossuary
+ * @license   MIT
+ */
+
 import { MongoClient, Db, GridFSBucket } from 'mongodb';
 const uri = process.env.MONGODB_URI;
 if (!uri) { console.warn('[mongodb] MONGODB_URI not set — persistence disabled'); }

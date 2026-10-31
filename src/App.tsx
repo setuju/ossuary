@@ -1,3 +1,22 @@
+/**
+ * ┌───────────────────────────────────────────────────────────────────────────┐
+ * │  ⌂  SATURUMAH.NET · FILE CONTRACT                                         │
+ * │  ───────────────────────────────────────────────────────────────────────  │
+ * │  File      : src/App.tsx                                                  │
+ * │  Purpose   : Main React component — altar, ghost screen, ledger, footer.  │
+ * │  Author    : Jack — Jack[at]SatuRumah[dot]Net                             │
+ * │  GitHub    : https://github.com/setuju                                    │
+ * │  Website   : https://saturumah.net                                        │
+ * │  Created   : 2026-10-26                                                   │
+ * │  License   : MIT                                                          │
+ * └───────────────────────────────────────────────────────────────────────────┘
+ *
+ * @author    Jack <Jack[at]SatuRumah[dot]Net>
+ * @created   2026-10-26
+ * @package   ossuary
+ * @license   MIT
+ */
+
 import React, { useState, useRef, useEffect } from 'react';
 import { DIEGETIC_MESSAGES } from './sentry/diegetic.ts';
 import { parseWikiExtract, extractWikiEra } from './utils/wikiParser.ts';

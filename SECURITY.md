@@ -1,3 +1,17 @@
+<!--
+┌────────────────────────────────────────────────────────────────────────┐
+│  ⌂  SATURUMAH.NET · FILE CONTRACT                                      │
+│  ────────────────────────────────────────────────────────────────────  │
+│  File      : SECURITY.md                                               │
+│  Purpose   : Vulnerability reporting + security best practices         │
+│  Author    : Jack — Jack[at]SatuRumah[dot]Net                          │
+│  GitHub    : https://github.com/setuju                                 │
+│  Website   : https://saturumah.net                                     │
+│  Created   : 2026-10-26                                                │
+│  License   : MIT                                                       │
+└────────────────────────────────────────────────────────────────────────┘
+-->
+
 # Security Policy
 
 ## Supported Versions

@@ -1,3 +1,22 @@
+/**
+ * ┌──────────────────────────────────────────────────────────────────────┐
+ * │  ⌂  SATURUMAH.NET · FILE CONTRACT                                    │
+ * │  ──────────────────────────────────────────────────────────────────  │
+ * │  File      : src/agent/index.ts                                      │
+ * │  Purpose   : Mastra agents — profiler, voice, and 5-tier fallbacks   │
+ * │  Author    : Jack — Jack[at]SatuRumah[dot]Net                        │
+ * │  GitHub    : https://github.com/setuju                               │
+ * │  Website   : https://saturumah.net                                   │
+ * │  Created   : 2026-10-26                                              │
+ * │  License   : MIT                                                     │
+ * └──────────────────────────────────────────────────────────────────────┘
+ *
+ * @author    Jack <Jack[at]SatuRumah[dot]Net>
+ * @created   2026-10-26
+ * @package   ossuary
+ * @license   MIT
+ */
+
 import { Agent } from '@mastra/core/agent';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 

@@ -1,3 +1,17 @@
+<!--
+┌──────────────────────────────────────────────────────────────────────┐
+│  ⌂  SATURUMAH.NET · FILE CONTRACT                                    │
+│  ──────────────────────────────────────────────────────────────────  │
+│  File      : CONTRIBUTING.md                                         │
+│  Purpose   : Contributor guide — how to add dead domains & features  │
+│  Author    : Jack — Jack[at]SatuRumah[dot]Net                        │
+│  GitHub    : https://github.com/setuju                               │
+│  Website   : https://saturumah.net                                   │
+│  Created   : 2026-10-26                                              │
+│  License   : MIT                                                     │
+└──────────────────────────────────────────────────────────────────────┘
+-->
+
 # Contributing to OSSUARY
 
 First off — thank you. This project is built by a single gardener-turned-coder, and every contribution, no matter how small, keeps the graveyard warm.

@@ -1,3 +1,22 @@
+/**
+ * ┌───────────────────────────────────────────────────────────────────────────┐
+ * │  ⌂  SATURUMAH.NET · FILE CONTRACT                                         │
+ * │  ───────────────────────────────────────────────────────────────────────  │
+ * │  File      : lib/persist.ts                                               │
+ * │  Purpose   : Persist ghost profiles + narratives + audio to MongoDB GridF │
+ * │  Author    : Jack — Jack[at]SatuRumah[dot]Net                             │
+ * │  GitHub    : https://github.com/setuju                                    │
+ * │  Website   : https://saturumah.net                                        │
+ * │  Created   : 2026-10-26                                                   │
+ * │  License   : MIT                                                          │
+ * └───────────────────────────────────────────────────────────────────────────┘
+ *
+ * @author    Jack <Jack[at]SatuRumah[dot]Net>
+ * @created   2026-10-26
+ * @package   ossuary
+ * @license   MIT
+ */
+
 import { getDb, getGridFSBucket } from './mongodb.ts';
 import { Readable } from 'stream';
 

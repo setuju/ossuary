@@ -1,3 +1,22 @@
+/**
+ * ┌──────────────────────────────────────────────────────────────────────┐
+ * │  ⌂  SATURUMAH.NET · FILE CONTRACT                                      │
+ * │  ──────────────────────────────────────────────────────────────────  │
+ * │  File      : src/utils/wikiParser.test.ts                              │
+ * │  Purpose   : Unit tests for wikiParser paragraph extraction            │
+ * │  Author    : Jack — Jack[at]SatuRumah[dot]Net                          │
+ * │  GitHub    : https://github.com/setuju                                 │
+ * │  Website   : https://saturumah.net                                     │
+ * │  Created   : 2026-10-26                                                │
+ * │  License   : MIT                                                       │
+ * └──────────────────────────────────────────────────────────────────────┘
+ *
+ * @author    Jack <Jack[at]SatuRumah[dot]Net>
+ * @created   2026-10-26
+ * @package   ossuary
+ * @license   MIT
+ */
+
 import { test } from 'node:test';
 import assert from 'node:assert';
 import { parseWikiExtract, extractWikiEra } from './wikiParser.ts';

@@ -1,4 +1,23 @@
 /**
+ * ┌──────────────────────────────────────────────────────────────────────┐
+ * │  ⌂  SATURUMAH.NET · FILE CONTRACT                                      │
+ * │  ──────────────────────────────────────────────────────────────────  │
+ * │  File      : src/utils/wikiParser.ts                                   │
+ * │  Purpose   : Parse Wikipedia extracts into ghost narrative material    │
+ * │  Author    : Jack — Jack[at]SatuRumah[dot]Net                          │
+ * │  GitHub    : https://github.com/setuju                                 │
+ * │  Website   : https://saturumah.net                                     │
+ * │  Created   : 2026-10-26                                                │
+ * │  License   : MIT                                                       │
+ * └──────────────────────────────────────────────────────────────────────┘
+ *
+ * @author    Jack <Jack[at]SatuRumah[dot]Net>
+ * @created   2026-10-26
+ * @package   ossuary
+ * @license   MIT
+ */
+
+/**
  * Wikipedia lead extract and article text parser for OSSUARY memorial.
  * Cleans raw Wikipedia extracts into readable, well-structured paragraphs
  * for the centered encyclopedic memorial reliquary.

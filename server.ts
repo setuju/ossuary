@@ -1,3 +1,22 @@
+/**
+ * ┌────────────────────────────────────────────────────────────────────────┐
+ * │  ⌂  SATURUMAH.NET · FILE CONTRACT                                      │
+ * │  ────────────────────────────────────────────────────────────────────  │
+ * │  File      : server.ts                                                 │
+ * │  Purpose   : Local dev server (Express + Vite middleware on port 3000) │
+ * │  Author    : Jack — Jack[at]SatuRumah[dot]Net                          │
+ * │  GitHub    : https://github.com/setuju                                 │
+ * │  Website   : https://saturumah.net                                     │
+ * │  Created   : 2026-10-26                                                │
+ * │  License   : MIT                                                       │
+ * └────────────────────────────────────────────────────────────────────────┘
+ *
+ * @author    Jack <Jack[at]SatuRumah[dot]Net>
+ * @created   2026-10-26
+ * @package   ossuary
+ * @license   MIT
+ */
+
 import 'dotenv/config';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -1,3 +1,22 @@
+/**
+ * ┌──────────────────────────────────────────────────────────────────────┐
+ * │  ⌂  SATURUMAH.NET · FILE CONTRACT                                    │
+ * │  ──────────────────────────────────────────────────────────────────  │
+ * │  File      : src/sentry/diegetic.ts                                  │
+ * │  Purpose   : Diegetic telemetry — errors as narrative messages       │
+ * │  Author    : Jack — Jack[at]SatuRumah[dot]Net                        │
+ * │  GitHub    : https://github.com/setuju                               │
+ * │  Website   : https://saturumah.net                                   │
+ * │  Created   : 2026-10-26                                              │
+ * │  License   : MIT                                                     │
+ * └──────────────────────────────────────────────────────────────────────┘
+ *
+ * @author    Jack <Jack[at]SatuRumah[dot]Net>
+ * @created   2026-10-26
+ * @package   ossuary
+ * @license   MIT
+ */
+
 import type * as SentryType from '@sentry/node';
 
 export const DIEGETIC_MESSAGES = {

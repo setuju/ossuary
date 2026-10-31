@@ -1,3 +1,22 @@
+/**
+ * ┌──────────────────────────────────────────────────────────────────────┐
+ * │  ⌂  SATURUMAH.NET · FILE CONTRACT                                    │
+ * │  ──────────────────────────────────────────────────────────────────  │
+ * │  File      : api/wiki.ts                                             │
+ * │  Purpose   : Wikipedia proxy (bypasses CORS, filters disambiguation) │
+ * │  Author    : Jack — Jack[at]SatuRumah[dot]Net                        │
+ * │  GitHub    : https://github.com/setuju                               │
+ * │  Website   : https://saturumah.net                                   │
+ * │  Created   : 2026-10-26                                              │
+ * │  License   : MIT                                                     │
+ * └──────────────────────────────────────────────────────────────────────┘
+ *
+ * @author    Jack <Jack[at]SatuRumah[dot]Net>
+ * @created   2026-10-26
+ * @package   ossuary
+ * @license   MIT
+ */
+
 // Server-side Wikipedia proxy — bypasses browser CORS.
 // GET /api/wiki?title=vine.co
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();

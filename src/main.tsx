@@ -1,3 +1,22 @@
+/**
+ * ┌──────────────────────────────────────────────────────────────────────┐
+ * │  ⌂  SATURUMAH.NET · FILE CONTRACT                                    │
+ * │  ──────────────────────────────────────────────────────────────────  │
+ * │  File      : src/main.tsx                                            │
+ * │  Purpose   : React entry point + Sentry SDK initialization           │
+ * │  Author    : Jack — Jack[at]SatuRumah[dot]Net                        │
+ * │  GitHub    : https://github.com/setuju                               │
+ * │  Website   : https://saturumah.net                                   │
+ * │  Created   : 2026-10-26                                              │
+ * │  License   : MIT                                                     │
+ * └──────────────────────────────────────────────────────────────────────┘
+ *
+ * @author    Jack <Jack[at]SatuRumah[dot]Net>
+ * @created   2026-10-26
+ * @package   ossuary
+ * @license   MIT
+ */
+
 import * as Sentry from '@sentry/react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
@@ -40,3 +59,17 @@ if (!container) {
 }
 
 createRoot(container).render(<App />);
+
+/**
+ * ┌──────────────────────────────────────────────────────────────────────┐
+ * │  ⌂  SATURUMAH.NET · FILE CONTRACT                                    │
+ * │  ──────────────────────────────────────────────────────────────────  │
+ * │  File      : src/main.tsx                                            │
+ * │  Purpose   : React entry point + Sentry SDK initialization           │
+ * │  Author    : Jack — Jack[at]SatuRumah[dot]Net                        │
+ * │  GitHub    : https://github.com/setuju                               │
+ * │  Website   : https://saturumah.net                                   │
+ * │  Created   : 2026-10-26                                              │
+ * │  License   : MIT                                                     │
+ * └──────────────────────────────────────────────────────────────────────┘
+ */

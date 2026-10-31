@@ -1,3 +1,22 @@
+/**
+ * ┌────────────────────────────────────────────────────────────────────────┐
+ * │  ⌂  SATURUMAH.NET · FILE CONTRACT                                      │
+ * │  ────────────────────────────────────────────────────────────────────  │
+ * │  File      : server-production.ts                                      │
+ * │  Purpose   : Express wrapper — runs Vercel-style handlers on Render    │
+ * │  Author    : Jack — Jack[at]SatuRumah[dot]Net                          │
+ * │  GitHub    : https://github.com/setuju                                 │
+ * │  Website   : https://saturumah.net                                     │
+ * │  Created   : 2026-10-26                                                │
+ * │  License   : MIT                                                       │
+ * └────────────────────────────────────────────────────────────────────────┘
+ *
+ * @author    Jack <Jack[at]SatuRumah[dot]Net>
+ * @created   2026-10-26
+ * @package   ossuary
+ * @license   MIT
+ */
+
 // Express wrapper — runs all Vercel API handlers on Render.
 // Deploy: render.yaml in root, start command `tsx server-production.ts`.
 import express from 'express';

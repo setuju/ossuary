@@ -1,3 +1,22 @@
+/**
+ * ┌──────────────────────────────────────────────────────────────────────┐
+ * │  ⌂  SATURUMAH.NET · FILE CONTRACT                                    │
+ * │  ──────────────────────────────────────────────────────────────────  │
+ * │  File      : api/whois.ts                                            │
+ * │  Purpose   : 3-layer WHOIS fallback: IP2WHOIS → RDAP → WhoisXMLAPI   │
+ * │  Author    : Jack — Jack[at]SatuRumah[dot]Net                        │
+ * │  GitHub    : https://github.com/setuju                               │
+ * │  Website   : https://saturumah.net                                   │
+ * │  Created   : 2026-10-26                                              │
+ * │  License   : MIT                                                     │
+ * └──────────────────────────────────────────────────────────────────────┘
+ *
+ * @author    Jack <Jack[at]SatuRumah[dot]Net>
+ * @created   2026-10-26
+ * @package   ossuary
+ * @license   MIT
+ */
+
 // WHOIS proxy with 3-layer fallback:
 // 1. IP2WHOIS (if key available)
 // 2. RDAP (free, no key)

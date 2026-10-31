@@ -1,3 +1,22 @@
+/**
+ * ┌───────────────────────────────────────────────────────────────────────────┐
+ * │  ⌂  SATURUMAH.NET · FILE CONTRACT                                         │
+ * │  ──────────────────────────────────────────────────────────────────────── │
+ * │  File      : api/recon.ts                                                 │
+ * │  Purpose   : DNS + WHOIS + Wayback + Wikipedia reconnaissance with Refuse │
+ * │  Author    : Jack — Jack[at]SatuRumah[dot]Net                             │
+ * │  GitHub    : https://github.com/setuju                                    │
+ * │  Website   : https://saturumah.net                                        │
+ * │  Created   : 2026-10-26                                                   │
+ * │  License   : MIT                                                          │
+ * └───────────────────────────────────────────────────────────────────────────┘
+ *
+ * @author    Jack <Jack[at]SatuRumah[dot]Net>
+ * @created   2026-10-26
+ * @package   ossuary
+ * @license   MIT
+ */
+
 export const maxDuration = 30;
 
 import type { IncomingMessage, ServerResponse } from 'node:http';

@@ -1,3 +1,15 @@
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │  ⌂  SATURUMAH.NET · FILE CONTRACT                                         │
+# │  ───────────────────────────────────────────────────────────────────────  │
+# │  File      : render.yaml                                                  │
+# │  Purpose   : Render deployment blueprint — Express service, Singapore reg │
+# │  Author    : Jack — Jack[at]SatuRumah[dot]Net                             │
+# │  GitHub    : https://github.com/setuju                                    │
+# │  Website   : https://saturumah.net                                        │
+# │  Created   : 2026-10-26                                                   │
+# │  License   : MIT                                                          │
+# └───────────────────────────────────────────────────────────────────────────┘
+
 services:
   - type: web
     name: ossuary-backend

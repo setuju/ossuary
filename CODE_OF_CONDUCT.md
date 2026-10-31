@@ -1,3 +1,17 @@
+<!--
+┌──────────────────────────────────────────────────────────────────────┐
+│  ⌂  SATURUMAH.NET · FILE CONTRACT                                    │
+│  ──────────────────────────────────────────────────────────────────  │
+│  File      : CODE_OF_CONDUCT.md                                      │
+│  Purpose   : Contributor Covenant 2.1                                │
+│  Author    : Jack — Jack[at]SatuRumah[dot]Net                        │
+│  GitHub    : https://github.com/setuju                               │
+│  Website   : https://saturumah.net                                   │
+│  Created   : 2026-10-26                                              │
+│  License   : MIT                                                     │
+└──────────────────────────────────────────────────────────────────────┘
+-->
+
 # Contributor Covenant Code of Conduct
 
 ## Our Pledge

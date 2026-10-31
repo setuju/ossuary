@@ -1,3 +1,17 @@
+<!--
+┌──────────────────────────────────────────────────────────────────────┐
+│  ⌂  SATURUMAH.NET · FILE CONTRACT                                    │
+│  ──────────────────────────────────────────────────────────────────  │
+│  File      : CHANGELOG.md                                            │
+│  Purpose   : SemVer history from v0.1.0 to current                   │
+│  Author    : Jack — Jack[at]SatuRumah[dot]Net                        │
+│  GitHub    : https://github.com/setuju                               │
+│  Website   : https://saturumah.net                                   │
+│  Created   : 2026-10-26                                              │
+│  License   : MIT                                                     │
+└──────────────────────────────────────────────────────────────────────┘
+-->
+
 # Changelog
 
 All notable changes to OSSUARY will be documented in this file.
