@@ -310,6 +310,13 @@ export default async function handler(req: any, res: any) {
       ? { status: 'deceased' as const, reason: `Known dead domain since ${hardcodedDeathYear}.` }
       : determineLifeStatus(lastAlive, waybackResult);
     if (lifeCheck.status === 'alive') {
+      // Log refusal as diegetic event — kind:paranormal, system:gate
+      logParanormalTelemetry(Sentry, `Refused summon for ${rawDomain}: ${lifeCheck.reason}`, {
+        system: 'gate',
+        errorCode: 'STILL_BREATHING',
+        domain: rawDomain,
+        details: { reason: lifeCheck.reason },
+      });
       return res.status(422).json({
         error: 'still_breathing',
         reason: lifeCheck.reason,
