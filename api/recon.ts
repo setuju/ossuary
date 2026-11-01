@@ -271,6 +271,7 @@ const KNOWN_DEAD_DOMAINS: Record<string, number> = {
   'vine.co': 2017, 'geocities.com': 2009, 'friendster.com': 2015, 'myspace.com': 2011,
   'pets.com': 2000, 'clubpenguin.com': 2017, 'megaupload.com': 2012,
   'grooveshark.com': 2015, 'sixdegrees.com': 2001, 'boo.com': 2000,
+  'pseudo.com': 2000, 'kozmo.com': 2001, 'altavista.com': 2013, 'mp3.com': 2003, 'audiogalaxy.com': 2002, 'xoom.com': 2000, 'suck.com': 2001, 'goto.com': 2003,
 };
 
 export default async function handler(req: any, res: any) {
